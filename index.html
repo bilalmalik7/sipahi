@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sipahi se Sipahsalar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0c110e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+<div id="app">
+
+  <!-- TITLE -->
+  <section id="title" class="screen">
+    <canvas id="titleCanvas"></canvas>
+    <div id="titleChar" class="char title-char"></div>
+    <div class="title-inner">
+      <div class="eyebrow">A life in uniform &middot; 1 life &middot; 44 years</div>
+      <h1 class="logo">Sipahi<span>se</span>Sipahsalar</h1>
+      <p class="tag">Start as a schoolboy from a soldier's village. End, if you are good enough and honest enough, wearing four stars.</p>
+      <div class="title-buttons">
+        <button class="btn ops-btn" data-open-ops><span class="ops-ic">⚑</span><span class="ops-txt"><b>Operations</b><small>56 missions · squad · armory</small></span><span class="ops-lvchip">LV 1</span><em class="ops-badge" hidden></em></button>
+        <button id="btnNew" class="btn primary">New Life</button>
+        <button id="btnContinue" class="btn" hidden>Continue</button>
+        <button class="btn" data-meta="train">Training Ground</button>
+        <button class="btn ghost starchip" data-meta="perks">★ <b>0</b> Perks</button>
+        <button class="btn ghost" data-meta="ach">Achievements</button>
+        <button class="btn ghost" data-meta="settings">Settings</button>
+        <button id="btnSound" class="btn ghost">Sound: On</button>
+      </div>
+      <p class="fine">Fiction. All characters, units and operations are invented.</p>
+    </div>
+  </section>
+
+  <!-- CREATE -->
+  <section id="create" class="screen" hidden>
+    <div class="create-card">
+      <h2>Your Life Begins</h2>
+      <div class="create-grid">
+        <div class="create-preview"><div id="createChar" class="char"></div></div>
+        <form id="createForm" class="create-form">
+          <label for="inName">Name</label>
+          <input id="inName" maxlength="22" value="Ahmed Raza" autocomplete="off">
+          <label for="inTown">Hometown</label>
+          <select id="inTown">
+            <option>Jhelum</option><option>Chakwal</option><option>Mardan</option><option>Skardu</option>
+            <option>Quetta</option><option>Hyderabad</option><option>Bahawalpur</option><option>Abbottabad</option>
+          </select>
+          <label>Skin tone</label>
+          <div id="skinRow" class="swatches"></div>
+          <label>Hair</label>
+          <div id="hairRow" class="swatches"></div>
+          <button class="btn primary" type="submit">Be Born (Age 16)</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIFE (BitLife-style main screen) -->
+  <section id="life" class="screen" hidden>
+    <header class="topbar">
+      <div class="who">
+        <div id="hudName" class="hud-name">Ahmed Raza</div>
+        <div class="hud-sub"><span id="hudRank" class="rank-chip">Student</span><span id="hudPlace"></span></div>
+      </div>
+      <div class="hud-tools"><button class="chipbtn opschip" data-open-ops aria-label="Operations">⚑ Ops<em class="ops-badge" hidden></em></button><button class="chipbtn starchip" data-meta="perks" aria-label="Perks">★ <b>0</b></button><button class="chipbtn" data-meta="train" aria-label="Training Ground">◎</button><button class="chipbtn" data-meta="ach" aria-label="Achievements">♛</button><button class="chipbtn" data-meta="settings" aria-label="Settings">⚙</button></div>
+      <div class="hud-right">
+        <div class="hud-age"><span id="hudAge">16</span><small>yrs</small></div>
+        <div id="hudMoney" class="hud-money">Rs 0</div>
+      </div>
+    </header>
+
+    <div class="life-body">
+      <div class="stage" id="lifeStage">
+        <canvas id="lifeCanvas"></canvas>
+        <div id="lifeChar" class="char stage-char"></div>
+        <canvas id="lifeFg" class="fg-layer"></canvas>
+        <div id="insigniaBig" class="insignia-big"></div>
+      </div>
+
+      <div class="side">
+        <div class="log" id="log"></div>
+        <div class="stats" id="stats"></div>
+      </div>
+    </div>
+
+    <nav class="bottomnav">
+      <button data-tab="career" class="navbtn"><i>&#9733;</i>Career</button>
+      <button data-tab="family" class="navbtn"><i>&#9829;</i>Family</button>
+      <button id="btnAge" class="agebtn" aria-label="Age one year"><b>+</b><span>Age</span></button>
+      <button data-tab="activities" class="navbtn"><i>&#9673;</i>Activities</button>
+      <button data-tab="record" class="navbtn"><i>&#9670;</i>Record</button>
+    </nav>
+  </section>
+
+  <!-- STORY OVERLAY -->
+  <section id="story" class="screen overlay" hidden>
+    <canvas id="storyCanvas"></canvas>
+    <div class="story-place" id="storyPlace"></div>
+    <div id="storyNpc" class="char npc-char"></div>
+    <div id="storyChar" class="char hero-char"></div>
+    <canvas id="storyFg" class="fg-layer"></canvas>
+    <div id="toastZone"></div>
+    <div class="dialog" id="dialog">
+      <div class="speaker" id="speaker"></div>
+      <div class="line" id="line"></div>
+      <div class="choices" id="choices"></div>
+      <div class="tap-hint" id="tapHint">tap &#9656;</div>
+    </div>
+    <div class="title-card" id="titleCard" hidden><div class="tc-a" id="tcA"></div><div class="tc-b" id="tcB"></div></div>
+  </section>
+
+  <!-- CUTSCENE -->
+  <section id="cut" class="screen overlay" hidden>
+    <canvas id="cutCanvas"></canvas>
+    <div class="bars"><i></i><i></i></div>
+    <div class="cut-caption" id="cutCaption"></div>
+    <button class="btn ghost skip" id="btnSkip">Skip &#9656;&#9656;</button>
+  </section>
+
+  <!-- MINIGAME -->
+  <section id="game" class="screen overlay" hidden>
+    <div class="game-head">
+      <div><div class="game-kicker" id="gameKicker">Mission</div><div class="game-title" id="gameTitle"></div></div>
+      <div class="game-hud" id="gameHud"></div>
+    </div>
+    <div class="game-brief" id="gameBrief"></div>
+    <div class="game-area" id="gameArea"><canvas id="gameCanvas"></canvas><div id="gameDom"></div></div>
+    <div class="game-pad" id="gamePad"></div>
+  </section>
+
+  <!-- SHEETS & MODALS -->
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-card">
+      <div class="sheet-head"><h3 id="sheetTitle"></h3><button class="x" id="sheetClose" aria-label="Close">&times;</button></div>
+      <div id="sheetBody" class="sheet-body"></div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <canvas id="modalArt" class="modal-art" hidden></canvas>
+      <div class="modal-kicker" id="modalKicker"></div>
+      <h3 id="modalTitle"></h3>
+      <p id="modalText"></p>
+      <div id="modalBtns" class="modal-btns"></div>
+    </div>
+  </div>
+
+  <div id="floaters"></div>
+</div>
+
+<script src="js/audio.js"></script>
+<script src="js/character.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/figures.js"></script>
+<script src="js/cutscenes.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/minigames.js"></script>
+<script src="js/minigames2.js"></script>
+<script src="js/ops.js"></script>
+<script src="js/story.js"></script>
+<script src="js/story2.js"></script>
+<script src="js/story3.js"></script>
+<script src="js/story4.js"></script>
+<script src="js/story5.js"></script>
+<script src="js/events.js"></script>
+<script src="js/engine.js"></script>
+<script>
+  // offline support when served over http(s) (installed app / Play Store build)
+  if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
