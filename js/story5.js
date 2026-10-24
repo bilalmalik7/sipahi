@@ -48,7 +48,7 @@
     { d: 4.4, who: 'Chhamb sector', cap: 'Dawn. Forty tonnes of steel per machine, and the ground shakes like a drum.', cam: [-.5, 1.02, .4, 1.1], draw(ctx, w, h, p, t, dt, fx, st) {
       S.valley(ctx, w, h, t, st, dt);
       const s = Math.min(h * .2, w * .18);
-      for (let i = 0; i < 4; i++) { const x = w * (-.2 + p * .6 + i * .28), y = h * (.86 + (i % 2) * .03); A.drawTank(ctx, x, y, s * (1 - (i % 2) * .15), Math.sin(t * 3 + i) * .015, -.08, '#56603a', 1, 0, null, i === 0, t); H.smoke(ctx, st, 'd' + i, x - s * .6, y - s * .1, dt, '170,150,110', 6, 1.4); }
+      for (let i = 0; i < 4; i++) { const x = w * (-.2 + p * .6 + i * .28), y = h * (.86 + (i % 2) * .03); A.drawTank(ctx, x, y, s * (1 - (i % 2) * .15), Math.sin(t * 3 + i) * .015, -.08, '#56603a', 1, 0, null, i === 0, t); H.smoke(ctx, st, 'sm_d' + i, x - s * .6, y - s * .1, dt, '170,150,110', 6, 1.4); }
       fx.shake = Math.max(fx.shake, .12);
     } },
     { d: 3.8, who: 'Contact front', cap: '"Enemy armour, two thousand metres! FIRE!"', flash: true, draw(ctx, w, h, p, t, dt, fx, st) {

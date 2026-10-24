@@ -97,6 +97,37 @@ const OPS = (() => {
     shoot: ['◎', 'Range'], obstacle: ['▲', 'Course'], fight: ['⚔', 'Close combat'], memory: ['▦', 'Recon'], cipher: ['✉', 'Intercept'], defuse: ['✂', 'Bomb disposal'],
     stealth: ['◐', 'Stealth'], sniper: ['⌖', 'Sniper'], assault: ['✦', 'Assault'], tank: ['▬', 'Tank duel'], heli: ['✈', 'Gunship'], para: ['☂', 'HALO jump'], defend: ['⛨', 'Hold the post'],
   };
+  // command decision before every mission: how you choose to fight changes the mission and the pay
+  const PLAN_TXT = {
+    assault: ['Wait for a second platoon: fewer hostiles', 'Clear it the standard way', 'Go in now before they dig in: more hostiles, more glory'],
+    tank: ['Call artillery first: one tank fewer', 'Engage as briefed', 'Charge the gap: an extra enemy tank'],
+    heli: ['Fly high and safe: fewer kills needed', 'Escort as briefed', 'Low and fast: more kills needed, less time'],
+    para: ['Jump in daylight: calmer winds', 'Jump as briefed', 'Night jump: rough winds, big reward'],
+    defend: ['Pull back to the inner wall: one wave fewer', 'Hold the line as briefed', 'Hold the forward trench: an extra wave'],
+    shoot: ['Take your time: fewer hits needed', 'Standard qualification', 'Expert badge attempt: more hits needed'],
+    sniper: ['Wait for better light', 'Take the shot as briefed', 'Shoot through the wind'],
+    stealth: ['Wait for the moon to set', 'Move as briefed', 'Go now while the guards change'],
+    fight: ['Feel him out first', 'Fight your fight', 'Go straight for him'],
+    obstacle: ['Shortened course', 'Full course', 'Full course with a heavy pack'],
+    cipher: ['Ask for more time', 'Work as briefed', 'Crack it before the courier moves'],
+    defuse: ['Ask for the robot first: more time', 'Defuse as briefed', 'No time for the robot: less time'],
+    memory: ['Study the map longer', 'Standard route', 'Longer route, fewer looks'],
+  };
+  const PLANS = [{ n: 'Cautious', mult: .8, d: -1 }, { n: 'By the book', mult: 1, d: 0 }, { n: 'Bold', mult: 1.45, d: 1 }];
+  function applyPlan(type, o, d) {
+    if (!d) return o; o = Object.assign({}, o);
+    const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+    if (o.diff) o.diff = lim(o.diff + d, 1, 5);
+    if (type === 'assault') o.enemies = lim((o.enemies || 7) + d * 2, 3, 16);
+    if (type === 'tank') o.enemies = lim((o.enemies || 2) + d, 1, 5);
+    if (type === 'heli') { o.need = lim((o.need || 12) + d * 3, 6, 22); if (d > 0) o.time = (o.time || 45) - 5; }
+    if (type === 'defend') o.waves = lim((o.waves || 3) + d, 2, 8);
+    if (type === 'shoot') o.need = lim((o.need || 12) + d * 2, 6, (o.total || 18) - 1);
+    if (type === 'obstacle') o.count = lim((o.count || 8) + d * 2, 4, 12);
+    if (type === 'cipher' || type === 'defuse') o.time = (o.time || 60) - d * 15;
+    if (type === 'memory') o.rounds = lim((o.rounds || 3) + d, 2, 6);
+    return o;
+  }
   const mid = (ti, mi) => `${THEATRES[ti].id}:${mi}`;
   const best = (ti, mi) => O.prog[mid(ti, mi)] || 0;
   const tStars = ti => THEATRES[ti].missions.reduce((a, _, mi) => a + best(ti, mi), 0);
@@ -127,7 +158,7 @@ const OPS = (() => {
     if (ctx) {
       const ti = ctx.ti, key = mid(ctx.ti, ctx.mi), prev = O.prog[key] || 0, base = 18 + ti * 9, boss = ctx.mi === 7;
       if (res.win) {
-        first = !prev; xp = (22 + ti * 9 + stars * 7) * (boss ? 2 : 1); sup = (base + stars * base * .45) * (boss ? 2 : 1) + (first ? base : 0);
+        first = !prev; xp = (22 + ti * 9 + stars * 7) * (boss ? 2 : 1) * (ctx.mult || 1); sup = ((base + stars * base * .45) * (boss ? 2 : 1) + (first ? base : 0)) * (ctx.mult || 1);
         if (stars > prev) O.prog[key] = stars;
         if (boss && first) { crate = 'gold'; O.cleared[THEATRES[ti].id] = 1; META.unlock('ops_' + THEATRES[ti].id); if (THEATRES.every(t => O.cleared[t.id])) META.unlock('ops_all'); }
         else if (Math.random() < (stars === 3 ? .3 : .16)) crate = 'field';
@@ -258,7 +289,8 @@ const OPS = (() => {
     const T = THEATRES[ti];
     runner.set(T.scene);
     $('opsSub').textContent = `Theatre ${ti + 1} · ${T.sub}`; $('opsName').textContent = T.n;
-    $('opsProg').innerHTML = `<i style="--k:${(tStars(ti) / 24 * 100).toFixed(0)}%"></i><span>${tStars(ti)} / 24 ★${O.cleared[T.id] ? ' · cleared' : ''}</span>`;
+    const rp = O.rep || 0;
+    $('opsProg').innerHTML = `<i style="--k:${(tStars(ti) / 24 * 100).toFixed(0)}%"></i><span>${tStars(ti)} / 24 ★${O.cleared[T.id] ? ' · cleared' : ''}</span><span class="rep ${rp > 0 ? 'good' : rp < 0 ? 'bad' : ''}">⚖ Name ${rp > 0 ? '+' + rp : rp}</span>`;
     let done = 0; for (let i = 0; i < 8; i++) if (best(ti, i)) done = i + 1;
     const all = pathD(PTS), part = done > 0 ? pathD(PTS.slice(0, Math.min(8, done + 1))) : '';
     $('opsPath').innerHTML = `<path d="${all}" class="p-all"/>${part ? `<path d="${part}" class="p-done"/>` : ''}`;
@@ -280,7 +312,7 @@ const OPS = (() => {
     requestAnimationFrame(fr);
     return () => { alive = false; };
   }
-  let stopArt = null;
+  let stopArt = null, plan = 1;
   function brief(t, i) {
     const T = THEATRES[t], ms = T.missions[i], boss = i === 7, [ic, tn] = TYPE[ms.type], b = best(t, i);
     const base = 18 + t * 9, supEst = Math.round((base + 3 * base * .45) * (boss ? 2 : 1) + (b ? 0 : base)), xpEst = (22 + t * 9 + 21) * (boss ? 2 : 1);
@@ -295,6 +327,7 @@ const OPS = (() => {
         <p>${D ? D.brief : ''}</p>
         <div class="ob-row"><div class="ob-best">${[1, 2, 3].map(k => `<em class="${k <= b ? 'on' : ''}">★</em>`).join('')}<small>${b ? 'Your best' : 'Not yet won'}</small></div>
         <div class="ob-rw"><span>up to <b>${supEst}</b> ⛁</span><span>up to <b>${xpEst}</b> XP</span>${boss && !b ? '<span class="gold">▣ Gold crate</span>' : '<span>▣ crate chance</span>'}</div></div>
+        <div class="ob-plan"><div class="ob-plan-h">Command decision</div>${PLANS.map((pl, k) => `<button class="plan ${k === plan ? 'on' : ''}" data-plan="${k}"><b>${pl.n}</b><span>${(PLAN_TXT[ms.type] || [])[k] || ''}</span><em>${pl.mult === 1 ? 'normal pay' : pl.mult > 1 ? '+45% pay' : '-20% pay'}</em></button>`).join('')}</div>
         <div class="ob-buddy">${bd ? `Squad buddy: <b>${bd.name}</b> fights beside you` : 'No squad buddy yet. Open a crate to recruit one.'} <button class="chipbtn" id="obSquad">Squad</button></div>
         <button class="btn primary deploy" id="obGo">Deploy ▶</button>
       </div></div>`;
@@ -302,23 +335,31 @@ const OPS = (() => {
     requestAnimationFrame(() => { const cv = $('obArt'); if (cv) stopArt = artFrame(cv, ms.o.scene || T.scene, boss ? (T.boss.npc || 'boss_' + T.id) : T.briefer, boss ? 'angry' : 'serious'); });
     $('obX').onclick = () => { SFX.click(); closeBrief(); };
     $('obSquad').onclick = () => { SFX.click(); squad(); };
-    $('obGo').onclick = () => { SFX.choose(); closeBrief(); deploy(t, i); };
+    el.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { plan = +b.dataset.plan; SFX.click(); el.querySelectorAll('[data-plan]').forEach(x => x.classList.toggle('on', +x.dataset.plan === plan)); });
+    $('obGo').onclick = () => { SFX.choose(); closeBrief(); deploy(t, i, plan); };
   }
   function closeBrief() { const was = !$('opsBrief').hidden; $('opsBrief').hidden = true; if (stopArt) { stopArt(); stopArt = null; } if (was && !$('ops').hidden && !busy) runner.start(); }
 
-  async function deploy(t, i) {
+  async function deploy(t, i, pl = 1) {
     if (busy) return; busy = true;
     const T = THEATRES[t], ms = T.missions[i], boss = i === 7;
     runner.stop();
     try {
       if (i === 0 && !O.intro[T.id]) { O.intro[T.id] = 1; save(); await CUT.play('ops_in_' + T.id); }
+      O.seen = O.seen || {};
       if (boss && !best(t, i)) await CUT.play('ops_boss_' + T.id);
-      const o = Object.assign({}, ms.o, { key: 'ops:' + mid(t, i), kicker: `${T.n} · ${i + 1}/8`, title: ms.n, ops: { ti: t, mi: i } });
+      else if (!O.seen[mid(t, i)] && CUT.missionIntro) { CUT.LIB.__opm = CUT.missionIntro(ms.type, ms.o.scene || T.scene, ms.n, `${T.n} · Mission ${i + 1}`); await CUT.play('__opm'); }
+      O.seen[mid(t, i)] = 1; save();
+      const o = Object.assign(applyPlan(ms.type, ms.o, PLANS[pl].d), { key: 'ops:' + mid(t, i), kicker: `${T.n} · ${i + 1}/8 · ${PLANS[pl].n}`, title: ms.n, ops: { ti: t, mi: i, mult: PLANS[pl].mult } });
       if (o.time && ['cipher', 'defuse'].includes(ms.type)) o.time += bonus('time');
       const wasCleared = !!O.cleared[T.id];
       const res = await GAMES.run(ms.type, o);
       if (window.GAME && GAME.renderStars) GAME.renderStars();
       if (boss && res.win && !wasCleared) {
+        const alive = await choiceFx(T);
+        O.rep = (O.rep || 0) + (alive ? 1 : -1); O.choice = O.choice || {}; O.choice[T.id] = alive ? 'alive' : 'killed'; save();
+        CUT.LIB['ops_win_' + T.id][0].cap = alive ? `${T.boss.n} is on his knees, hands tied. He will stand trial.` : `${T.boss.n} does not get up again. Nobody says anything on the walk back.`;
+        CUT.LIB['ops_win_' + T.id][1].cap = T.id === 'final' ? ((O.rep || 0) >= 3 ? 'Shikari stands trial in an open court. The country watches an army that kept its word, even to him.' : 'It is over. The men are quiet. Some victories leave a taste you never quite rinse away.') : alive ? T.lines[3] : T.lines[3] + ' But in the villages, people lower their voices when your unit drives past.';
         await CUT.play('ops_win_' + T.id);
         await bannerFx(`${T.n} cleared`, THEATRES[t + 1] ? `Next theatre: ${THEATRES[t + 1].n}` : 'Every theatre cleared. You are a legend of the Army.');
       }
@@ -341,6 +382,15 @@ const OPS = (() => {
   }
   let lastCrates = { field: O.crates.field, gold: O.crates.gold };
 
+  function choiceFx(T) {
+    return new Promise(res => {
+      const d = document.createElement('div'); d.className = 'ops-banner choice';
+      d.innerHTML = `<div class="bn-in"><small>Your decision</small><h2>${T.boss.n}</h2><p>He is wounded and unarmed. Your men are looking at you. Whatever you decide will follow your unit.</p>
+        <div class="row col"><button class="btn primary" data-c="1">Take him alive for trial</button><button class="btn danger" data-c="0">Let the men settle it</button></div><p class="sheet-note">Mercy builds your name. Revenge costs it.</p></div>`;
+      $('app').appendChild(d); SFX.pad('tense');
+      d.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { SFX.choose(); SFX.stopPad(); d.remove(); res(b.dataset.c === '1'); });
+    });
+  }
   function bannerFx(title, sub) {
     return new Promise(res => {
       const d = document.createElement('div'); d.className = 'ops-banner';

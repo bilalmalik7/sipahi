@@ -411,6 +411,7 @@ Commander Dube(angry): Then we will meet again. Tonight, maybe.
 @history UN peacekeeping, Kivara
 
 === 34 | pma | Instructor | id: instructor
+@cut kakul_return
 * You return to Kakul as an instructor. The gravel square looks smaller than you remember.
 * A cadet, eighteen, terrified, stands to attention in front of you. He has been caught covering for his roommate at roll call.
 ? You remember a night like this one.
@@ -442,6 +443,7 @@ Khattak: Islamabad. Of course. Thank you, beta.
 @log Instructor at PMA Kakul.
 
 === 35 | office | The contract | id: haroon
+@cut concrete
 * You are Colonel Staff at a corps headquarters. A new cantonment hospital is being built. You sign off on the contractor's quality reports.
 @npc haroon happy
 Seth Haroon(happy): Major Sahib! Such a pleasure. Small thing. The concrete grade in the specifications is excessive. Nobody will notice. And a little appreciation will find its way to your children's school fees. Twenty lakh.
@@ -464,6 +466,7 @@ Seth Haroon(angry): You'll regret this, Major. I play golf with very important p
 === 36 | barracks | Command | id: command
 @promote Lieutenant Colonel
 @title Command | Your own battalion
+@cut battalion
 * Command of an infantry battalion: nine hundred men, their families, their quarrels, their weddings and their funerals. Every one of them is now your responsibility.
 ? Your first address to the battalion.
 - "I will never ask you to do anything I haven't done, or won't do beside you." {leadership+5 courage+2}
@@ -528,6 +531,7 @@ Sepoy Gul Zaman(happy): Sir! There are children on the roof of the school! I'll 
 @history Sepoy Gul Zaman martyred in the floods
 
 === 38 | home | Two visitors | id: visitors
+@cut old_woman
 @npc gulmother
 @if !flag.gulLeave -> gul_m
 Gul Zaman's mother: My son wrote about you. "My CO is a good man, Amma. He gave me leave for Saima's wedding." That's what he wrote.
@@ -569,6 +573,7 @@ Bilal(sad): I understand. I'd say the same. Probably.
 
 === 39 | village | Quiet year | id: quiet
 * A quiet year, if there is such a thing.
+@cut sister_wedding
 @npc zainab happy
 Zainab(happy): Bhai, he's a schoolteacher, like me, and he's kind, and he makes terrible jokes, and Ammi likes him. Will you give me away?
 @if flag.paidZainab -> zfees

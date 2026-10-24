@@ -13,7 +13,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 // Full-screen WebView host for the game, which ships inside the APK as assets and runs offline.
 public class MainActivity extends Activity {
@@ -53,6 +52,8 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.startsWith("file://")) return false;
+                // the game asks to close only from its title screen, after its own "press back again" prompt
+                if (url.startsWith("sipahsalar://exit")) { finish(); return true; }
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ignored) { }
                 return true;
             }
@@ -77,12 +78,12 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        // first press closes whatever panel is open in the game; a quick second press exits
+        // the game decides what Back means (close a panel, pause a mission, go to the title screen);
+        // it closes the app only from the title screen. If the page has not loaded, Back works normally.
         long now = System.currentTimeMillis();
-        if (now - lastBack < 1800) { super.onBackPressed(); return; }
+        if (web.getProgress() < 100 && now - lastBack < 1800) { super.onBackPressed(); return; }
         lastBack = now;
         web.loadUrl("javascript:window.androidBack&&window.androidBack()");
-        Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
     }
 
     // save and go quiet first, then freeze JavaScript timers so the game uses no battery in the background

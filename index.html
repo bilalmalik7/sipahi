@@ -44,6 +44,7 @@
   <!-- CREATE -->
   <section id="create" class="screen" hidden>
     <div class="create-card">
+      <button class="chipbtn create-back" id="createBack" type="button">◀ Back</button>
       <h2>Your Life Begins</h2>
       <div class="create-grid">
         <div class="create-preview"><div id="createChar" class="char"></div></div>
@@ -72,7 +73,8 @@
         <div id="hudName" class="hud-name">Ahmed Raza</div>
         <div class="hud-sub"><span id="hudRank" class="rank-chip">Student</span><span id="hudPlace"></span></div>
       </div>
-      <div class="hud-tools"><button class="chipbtn opschip" data-open-ops aria-label="Operations">⚑ Ops<em class="ops-badge" hidden></em></button><button class="chipbtn starchip" data-meta="perks" aria-label="Perks">★ <b>0</b></button><button class="chipbtn" data-meta="train" aria-label="Training Ground">◎</button><button class="chipbtn" data-meta="ach" aria-label="Achievements">♛</button><button class="chipbtn" data-meta="settings" aria-label="Settings">⚙</button></div>
+      <div class="hud-tools"><button class="chipbtn" id="btnHome" aria-label="Main menu">⌂</button><button class="chipbtn opschip" data-open-ops aria-label="Operations">⚑ Ops<em class="ops-badge" hidden></em></button><button class="chipbtn starchip" data-meta="perks" aria-label="Perks">★ <b>0</b></button><button class="chipbtn" data-meta="train" aria-label="Training Ground">◎</button><button class="chipbtn" data-meta="ach" aria-label="Achievements">♛</button><button class="chipbtn" data-meta="settings" aria-label="Settings">⚙</button></div>
+      <div class="saved-note" id="savedNote">✓ Saved</div>
       <div class="hud-right">
         <div class="hud-age"><span id="hudAge">16</span><small>yrs</small></div>
         <div id="hudMoney" class="hud-money">Rs 0</div>
@@ -132,6 +134,7 @@
     <div class="game-head">
       <div><div class="game-kicker" id="gameKicker">Mission</div><div class="game-title" id="gameTitle"></div></div>
       <div class="game-hud" id="gameHud"></div>
+      <button class="chipbtn game-pause" id="gamePause" hidden>❚❚ Pause</button>
     </div>
     <div class="game-brief" id="gameBrief"></div>
     <div class="game-area" id="gameArea"><canvas id="gameCanvas"></canvas><div id="gameDom"></div></div>
@@ -164,6 +167,7 @@
 <script src="js/scenes.js"></script>
 <script src="js/figures.js"></script>
 <script src="js/cutscenes.js"></script>
+<script src="js/cutscenes2.js"></script>
 <script src="js/meta.js"></script>
 <script src="js/minigames.js"></script>
 <script src="js/minigames2.js"></script>
@@ -173,6 +177,7 @@
 <script src="js/story3.js"></script>
 <script src="js/story4.js"></script>
 <script src="js/story5.js"></script>
+<script src="js/story6.js"></script>
 <script src="js/events.js"></script>
 <script src="js/engine.js"></script>
 <script>

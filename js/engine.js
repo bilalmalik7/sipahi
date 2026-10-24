@@ -48,7 +48,15 @@
   }
   const first = () => S.name.split(' ')[0];
   const last = () => S.name.split(' ').slice(-1)[0];
-  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+  // Autosave. While a story scene is playing the save stays at the scene's start (a checkpoint), so
+  // closing the app mid-scene replays that scene on Continue instead of losing or doubling it.
+  let lastSaveNote = 0;
+  function save(force) {
+    if (!S || (S.cur && !force)) return;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { return; }
+    const now = Date.now(), el = document.getElementById('savedNote');
+    if (el && now - lastSaveNote > 4000 && !$('life').hidden) { lastSaveNote = now; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  }
   function load() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return s && s.v === 1 ? s : null; } catch (e) { return null; } }
   function wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
 
@@ -438,6 +446,7 @@
 
   // ---------------- interpreter ----------------
   async function runEvent(ev) {
+    S.cur = ev.id; save(true);
     openStory(ev.bg, ev.place);
     if (ev.title && !ev.noChapter) await chapter(ev);
     S.seen[ev.id] = true;
@@ -496,6 +505,7 @@
       }
     }
     closeStory();
+    S.cur = null; save();
   }
 
   // ---------------- random events ----------------
@@ -550,6 +560,7 @@
     S.age++; S.year++; S.ap = 3;
     const pay = RANKS[S.rank].pay;
     if (pay) { S.money += Math.round(pay * .35); }
+    yearlyAssets();
     if (S.rank >= 2) S.perf = clamp(S.perf - 3 + META.perk('staff') * 2, 0, 100);
     S.health = clamp(S.health + META.perk('iron'), 0, 100);
     if (S.age < 45 && S.health < 85) S.health = clamp(S.health + ri(3, 6), 0, 85);
@@ -568,6 +579,7 @@
       yearly(); yearFlip(); window.OPS && OPS.track('year');
       log(S.age >= 60 ? 'Another year.' : `You are ${S.age}.`);
       renderAll();
+      if (grantsDue().length) await grantsCheck();
       if (S.pending && S.age >= S.pending.at && S.rank >= 2 && S.rank < 11) {
         openStory('office', 'Promotion board'); await say('', '', `The promotion board reconvenes to consider your file again for ${RANKS[S.rank + 1].n}.`, 'narr');
         await promote(false, 'Promoted on re-board'); closeStory();
@@ -682,39 +694,60 @@
   function sheet(title, html) { $('sheetTitle').textContent = title; $('sheetBody').innerHTML = html; $('sheet').hidden = false; }
   function closeSheet() { $('sheet').hidden = true; }
   function apLine() { return `<p class="ap">Actions left this year: ${'&#9673; '.repeat(S.ap)}${'&#9675; '.repeat(Math.max(0, 3 - S.ap))}</p>`; }
+  // Every activity costs something: time away from work, energy, money, or a risk of getting hurt.
+  // eff lists what moves (+ up, - down, ? may happen) so the player sees the trade-off before choosing.
+  function friendsFx(n) { return Object.entries(S.rels).filter(([, r]) => r.alive && /friend/i.test(r.role)).map(([k]) => `rel.${k}+${n}`).join(' '); }
+  function familyFx(n) { return ['ammi', 'abba', 'zainab', 'ayesha'].filter(k => S.rels[k] && S.rels[k].alive).map(k => `rel.${k}${n}`).join(' '); }
   function activities() {
-    const r = S.rank;
+    const r = S.rank, kid = r === 0;
     const A = [
-      { id: 'gym', ic: '&#9822;', n: r === 0 ? 'Morning run & push-ups' : 'PT and gym', d: 'Fitness and health up.', fx: () => `fitness+${ri(3, 6)} health+${ri(1, 3)} happy+1` },
-      { id: 'study', ic: '&#9998;', n: r === 0 ? 'Study for exams' : r === 1 ? 'Military studies' : 'Read military history', d: 'Intellect up.', fx: () => `intellect+${ri(3, 6)}` },
-      { id: 'pray', ic: '&#9790;', n: 'Pray at the mosque', d: 'Peace of mind, a little honour.', fx: () => `happy+${ri(3, 5)} honor+${ri(1, 2)}` },
-      { id: 'work', ic: '&#9733;', n: r <= 1 ? 'Extra drill practice' : 'Volunteer for extra duty', d: 'Performance up, happiness down.', fx: () => `perf+${ri(6, 10)} happy-2 health-1`, need: () => r >= 1 },
-      { id: 'range', ic: '&#9678;', n: 'Range day', d: 'Play the range. Courage and performance.', game: 'shoot', need: () => r >= 1 },
-      { id: 'spar', ic: '&#9876;', n: 'Unarmed combat sparring', d: 'Play a sparring bout.', game: 'fight', need: () => r >= 1 },
-      { id: 'mentor', ic: '&#9873;', n: 'Mentor young officers and soldiers', d: 'Leadership up.', fx: () => `leadership+${ri(4, 6)} perf+2`, need: () => r >= 4 },
-      { id: 'troops', ic: '&#9878;', n: 'Walk the lines with your men', d: 'Leadership and honour.', fx: () => `leadership+${ri(2, 4)} honor+1 happy+1`, need: () => r >= 2 },
-      { id: 'doctor', ic: '&#10010;', n: 'Medical check-up at CMH', d: 'Health up. Costs Rs 15,000.', fx: () => `health+${ri(6, 12)} money-15`, need: () => S.money >= 15 },
-      { id: 'holiday', ic: '&#9728;', n: 'Take annual leave', d: 'Happiness up. Costs Rs 80,000.', fx: () => `happy+${ri(8, 12)} perf-2 money-80`, need: () => r >= 2 && S.money >= 80 },
-      { id: 'cricket', ic: '&#9918;', n: r === 0 ? 'Street cricket with friends' : 'Unit cricket match', d: 'Happiness and fitness.', fx: () => `happy+${ri(4, 6)} fitness+2` },
+      { id: 'gym', ic: '&#9822;', n: kid ? 'Morning run & push-ups' : 'PT and gym', eff: 'fitness+ health+ happy-', risk: [.12, 'health-7', 'You pull a hamstring and limp for a month.'], fx: () => `fitness+${ri(3, 6)} health+${ri(1, 3)} happy-1` },
+      { id: 'study', ic: '&#9998;', n: kid ? 'Study for exams' : r === 1 ? 'Military studies' : 'Read military history', eff: 'intellect+ happy- fitness-', fx: () => `intellect+${ri(3, 6)} happy-2 fitness-1` },
+      { id: 'pray', ic: '&#9790;', n: 'Pray at the mosque', eff: 'happy+ honor+ perf-', fx: () => `happy+${ri(3, 5)} honor+${ri(1, 2)}${r >= 2 ? ' perf-1' : ''}` },
+      { id: 'friends', ic: '&#9749;', n: kid ? 'Chai with friends at the dhaba' : 'Evening out with old friends', eff: 'happy+ friends+ money- ' + (kid ? 'intellect-' : 'perf-'), fx: () => `happy+${ri(4, 7)} money-${kid ? 2 : 8} ${kid ? 'intellect-2' : 'perf-2'} ${friendsFx(ri(5, 9))}` },
+      { id: 'tuition', ic: '&#9997;', n: 'Teach tuition to younger kids', eff: 'money+ intellect+ happy- fitness-', fx: () => `money+${ri(8, 14)} intellect+1 happy-2 fitness-1`, need: () => kid },
+      { id: 'rest', ic: '&#9832;', n: 'Rest and sleep properly for a change', eff: 'health+ happy+ ' + (kid ? 'intellect-' : 'perf-') + ' fitness-', fx: () => `health+${ri(4, 7)} happy+2 ${kid ? 'intellect-2' : 'perf-3'} fitness-1` },
+      { id: 'work', ic: '&#9733;', n: r <= 1 ? 'Extra drill practice' : 'Volunteer for extra duty', eff: 'perf+ happy- health- family-', fx: () => `perf+${ri(6, 10)} happy-3 health-2 ${familyFx(-3)}`, need: () => r >= 1 },
+      { id: 'range', ic: '&#9678;', n: 'Range day', d: 'Play the range. Win: courage and performance up. Costs a day of rest.', game: 'shoot', need: () => r >= 1 },
+      { id: 'spar', ic: '&#9876;', n: 'Unarmed combat sparring', d: 'Play a bout. Win: fitness, courage, performance. You will take some hits either way.', game: 'fight', need: () => r >= 1 },
+      { id: 'patrol', ic: '&#9873;', n: 'Volunteer for a night patrol', eff: 'courage+ perf+ health- happy-', risk: [.15, 'health-10 courage+3', 'A burst of fire in the dark. You come back with a graze across the ribs.'], fx: () => `courage+${ri(3, 5)} perf+${ri(2, 4)} health-2 happy-2`, need: () => r >= 2 && r <= 6 },
+      { id: 'mentor', ic: '&#9873;', n: 'Mentor young officers and soldiers', eff: 'leadership+ perf+ happy-', fx: () => `leadership+${ri(4, 6)} perf+2 happy-1`, need: () => r >= 4 },
+      { id: 'troops', ic: '&#9878;', n: 'Walk the lines with your men', eff: 'leadership+ honor+ perf-', fx: () => `leadership+${ri(2, 4)} honor+1 happy+1 perf-1`, need: () => r >= 2 },
+      { id: 'doctor', ic: '&#10010;', n: 'Medical check-up at CMH', eff: 'health+ money- perf-', fx: () => `health+${ri(6, 12)} money-15 perf-1`, need: () => S.money >= 15 },
+      { id: 'holiday', ic: '&#9728;', n: 'Take annual leave with the family', eff: 'happy+ health+ family+ perf- money-', fx: () => `happy+${ri(8, 12)} health+3 perf-3 money-80 ${familyFx('+' + ri(5, 9))}`, need: () => r >= 2 && S.money >= 80 },
+      { id: 'invest', ic: '&#8377;', n: 'Put savings into a friend\'s business', eff: 'money? happy?', gamble: true, need: () => r >= 3 && S.money >= 100 },
+      { id: 'cricket', ic: '&#9918;', n: kid ? 'Street cricket with friends' : 'Unit cricket match', eff: 'happy+ fitness+ ' + (kid ? 'intellect-' : 'perf-'), risk: [.1, 'health-5', 'A short ball catches you on the wrist. It swells up like a mango.'], fx: () => `happy+${ri(4, 6)} fitness+2 ${kid ? 'intellect-1' : 'perf-1'} ${friendsFx(3)}` },
     ];
     return A.filter(a => !a.need || a.need());
+  }
+  const EFF_NAME = { fitness: 'Fitness', health: 'Health', happy: 'Happiness', intellect: 'Intellect', honor: 'Honour', perf: 'Performance', courage: 'Courage', leadership: 'Leadership', money: 'Money', friends: 'Friends', family: 'Family' };
+  function effChips(a) {
+    if (!a.eff) return '';
+    const chips = a.eff.trim().split(/\s+/).map(tok => { const k = tok.slice(0, -1), sg = tok.slice(-1); return `<em class="eff ${sg === '+' ? 'up' : sg === '-' ? 'down' : 'maybe'}">${sg === '+' ? '▲' : sg === '-' ? '▼' : '?'} ${EFF_NAME[k] || k}</em>`; }).join('');
+    return `<span class="effs">${chips}${a.risk ? `<em class="eff risk">⚠ ${Math.round(a.risk[0] * 100)}% risk</em>` : ''}</span>`;
   }
   async function doActivity(a) {
     if (S.ap <= 0) return;
     S.ap--; closeSheet(); SFX.click();
     if (a.game) {
       const r = await GAMES.run(a.game, a.game === 'fight' ? { foe: 'Sparring partner', diff: 1 + Math.min(3, S.rank / 3 | 0), scene: 'cherat', courage: S.courage } : { diff: 1 + Math.min(3, S.rank / 3 | 0), need: 10, total: 14, courage: S.courage });
-      applyFx(r.win ? (a.game === 'fight' ? 'fitness+3 courage+3 perf+3' : 'courage+3 perf+5') : 'perf+1');
+      if (a.game === 'fight') applyFx(r.win ? 'fitness+3 courage+3 perf+3 health-3' : 'health-6 happy-2 courage+1');
+      else applyFx(r.win ? 'courage+3 perf+5 happy-1' : 'perf+1 happy-2');
       log(`${a.n}: ${r.win ? 'top of the group' : 'a rough day'}.`);
+    } else if (a.gamble) {
+      const ok = Math.random() < .5 + S.intellect / 400;
+      applyFx(ok ? `money+${ri(60, 140)} happy+4` : `money-${ri(50, 100)} happy-5`);
+      log(ok ? 'The business took off. Your share paid back handsomely.' : 'The business folded. Your savings went with it.', ok ? 'good' : 'bad');
     } else {
       applyFx(a.fx()); log(`${a.n}.`);
+      if (a.risk && Math.random() < a.risk[0]) { applyFx(a.risk[1]); log(a.risk[2], 'bad'); }
     }
     save(); renderAll();
   }
   function openTab(tab) {
     SFX.click();
     if (tab === 'activities') {
-      const html = apLine() + activities().map((a, i) => `<button class="act-btn" data-i="${i}" ${S.ap <= 0 ? 'disabled' : ''}><span class="ic">${a.ic}</span><span><b>${a.n}</b><span>${a.d}</span></span></button>`).join('') + (S.ap <= 0 ? '<p class="sheet-note">No actions left. Press Age to move to the next year.</p>' : '');
+      const html = apLine() + activities().map((a, i) => `<button class="act-btn" data-i="${i}" ${S.ap <= 0 ? 'disabled' : ''}><span class="ic">${a.ic}</span><span><b>${a.n}</b>${a.d ? `<span>${a.d}</span>` : ''}${effChips(a)}</span></button>`).join('') + (S.ap <= 0 ? '<p class="sheet-note">No actions left. Press Age to move to the next year.</p>' : '');
       sheet('Activities', html);
       const list = activities();
       $('sheetBody').querySelectorAll('.act-btn').forEach(b => b.onclick = () => doActivity(list[+b.dataset.i]));
@@ -722,12 +755,12 @@
       const people = Object.entries(S.rels).filter(([, r]) => r.alive);
       const dead = Object.values(S.rels).filter(r => !r.alive);
       const html = apLine() + people.map(([k, r]) => `<div class="row-item"><div class="meta"><b>${r.name}</b><span>${r.role}</span><div class="bar" style="margin-top:6px"><i style="width:${r.v}%;background:${r.v < 30 ? '#d04a33' : '#22a95f'}"></i></div></div>
-        <div class="acts"><button class="btn small" data-k="${k}" data-a="time" ${S.ap <= 0 ? 'disabled' : ''}>Spend time</button><button class="btn small" data-k="${k}" data-a="gift" ${S.ap <= 0 || S.money < 20 ? 'disabled' : ''}>Gift</button></div></div>`).join('')
+        <div class="acts"><button class="btn small" data-k="${k}" data-a="time" ${S.ap <= 0 ? 'disabled' : ''} title="Bond up, happiness up, ${S.rank >= 2 ? 'performance' : 'intellect'} down">Spend time</button><button class="btn small" data-k="${k}" data-a="gift" ${S.ap <= 0 || S.money < 20 ? 'disabled' : ''}>Gift</button></div></div>`).join('')
         + (dead.length ? `<p class="sheet-note">Remembered: ${dead.map(r => `${r.name} (${r.role})`).join(', ')}</p>` : '');
-      sheet('Family & Friends', html);
+      sheet('Family & Friends', `<p class="sheet-note">Time with people costs time at work or study. A gift costs Rs 20,000.</p>` + html);
       $('sheetBody').querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
         if (S.ap <= 0) return; const r = S.rels[b.dataset.k]; S.ap--;
-        if (b.dataset.a === 'time') { applyFx(`rel.${b.dataset.k}+${ri(6, 12)} happy+2`); log(`Spent time with ${r.name}.`); }
+        if (b.dataset.a === 'time') { applyFx(`rel.${b.dataset.k}+${ri(6, 12)} happy+2 ${S.rank >= 2 ? 'perf-2' : 'intellect-1'}`); log(`Spent time with ${r.name}.`); }
         else { applyFx(`rel.${b.dataset.k}+${ri(8, 14)} money-20`); log(`Bought ${r.name} a gift.`); }
         save(); renderAll(); openTab('family');
       });
@@ -742,7 +775,9 @@
         ${S.flags.inquiry ? `<dt>Inquiry</dt><dd style="color:#f1a08f">A court of inquiry is open against you.</dd>` : ''}</dl>
         <p class="sheet-note">Board score = 60% Performance + 20% Leadership + 20% Honour. Raise Performance with extra duty, missions and good decisions. An Honour below 25 blocks every promotion.</p>
         <div class="timeline">${RANKS.slice(2).map((r, i) => `<div><b>${i + 2 <= S.rank ? '&#10003;' : i + 2 === S.rank + 1 ? '&#9656;' : '&middot;'}</b><span style="${i + 2 <= S.rank ? 'color:var(--brass)' : ''}">${r.n}</span></div>`).join('')}</div>`;
-      sheet('Career', html);
+      sheet('Career', html + careerExtras());
+      $('sheetBody').querySelectorAll('[data-course]').forEach(b => b.onclick = () => applyCourse(COURSES.find(c => c.id === b.dataset.course)));
+      $('sheetBody').querySelectorAll('[data-as]').forEach(b => b.onclick = () => assetAction(+b.dataset.as, b.dataset.act));
     } else if (tab === 'record') {
       const html = `<h4 style="margin:0;font-family:var(--label);letter-spacing:.1em;text-transform:uppercase;color:var(--khaki)">Ribbons</h4>
         <div class="ribbons">${S.medals.map(m => `<i class="ribbon" style="background:${m.c}" title="${m.n}"></i>`).join('') || '<span class="sheet-note">None yet.</span>'}</div>
@@ -755,11 +790,111 @@
     }
   }
 
+  // ---------------- pay, perks, property and foreign courses ----------------
+  // money is in thousands of rupees. Pay is yearly; roughly a third of it is saved.
+  const RANK_PERKS = {
+    1: ['Cadet stipend', 'Mess and quarters at Kakul'],
+    2: ['Bachelor officers\' quarters', 'A shared batman (orderly)', 'Free treatment at CMH for your family'],
+    4: ['Married accommodation in the cantonment', 'Motorcycle and fuel allowance'],
+    5: ['Residential plot allotment: 1 kanal'],
+    6: ['Commanding officer\'s house', 'Staff car with a driver', 'Personal orderly'],
+    7: ['Larger staff house', 'Club membership'],
+    8: ['Agricultural land grant: 50 acres', 'Pennant on the staff car'],
+    9: ['General officer\'s house', 'Flag car, escort and guard', 'Second residential plot: 2 kanal'],
+    10: ['Corps commander\'s residence', 'Security detail'],
+    11: ['Army House, Rawalpindi', 'Official aircraft for visits', 'Personal staff'],
+  };
+  const GRANTS = {
+    5: { id: 'plot1', n: 'Residential plot, 1 kanal', kind: 'plot', size: 1, value: 45000 },
+    8: { id: 'land', n: 'Agricultural land, 50 acres', kind: 'land', value: 120000 },
+    9: { id: 'plot2', n: 'Residential plot, 2 kanal', kind: 'plot', size: 2, value: 95000 },
+  };
+  const COURSES = [
+    { id: 'benning', n: 'Infantry Officers\' Advanced Course', where: 'Fort Benning, USA', city: 'Georgia', min: 3, max: 5, req: () => S.fitness >= 45, reqT: 'Fitness 45', fx: 'perf+7 fitness+3 courage+2 leadership+2', flag: ['#b22234', '#ffffff', '#3c3b6e'], mark: 'flagpole', months: 'six months' },
+    { id: 'turkey', n: 'Commando Course', where: 'Eğirdir, Turkey', city: 'Eğirdir', min: 3, max: 5, req: () => S.fitness >= 55 || S.flags.ssg, reqT: 'Fitness 55 or SSG', fx: 'courage+5 fitness+5 perf+5', flag: ['#e30a17', '#ffffff', '#e30a17'], mark: 'mosque', months: 'four months' },
+    { id: 'sandhurst', n: 'Exchange instructor, Royal Military Academy', where: 'Sandhurst, UK', city: 'Camberley', min: 4, max: 5, req: () => S.perf >= 55, reqT: 'Performance 55', fx: 'leadership+6 intellect+4 perf+7 money+300', flag: ['#012169', '#ffffff', '#c8102e'], mark: 'clock', months: 'two years' },
+    { id: 'saudi', n: 'Training mission on deputation', where: 'Riyadh, Saudi Arabia', city: 'Riyadh', min: 4, max: 7, req: () => true, reqT: '', fx: 'money+900 perf+2 happy-3', flag: ['#006c35', '#ffffff', '#006c35'], mark: 'tower', months: 'two years', away: true },
+    { id: 'unmo', n: 'UN military observer', where: 'Western Sahara', city: 'Laayoune', min: 4, max: 6, req: () => S.honor >= 50, reqT: 'Honour 50', fx: 'honor+4 leadership+3 money+400 perf+4', flag: ['#5b92e5', '#ffffff', '#5b92e5'], mark: 'dune', months: 'one year', away: true },
+    { id: 'china', n: 'Command and Staff course', where: 'Nanjing, China', city: 'Nanjing', min: 5, max: 6, req: () => S.intellect >= 50, reqT: 'Intellect 50', fx: 'intellect+6 leadership+4 perf+7', flag: ['#de2910', '#de2910', '#de2910'], mark: 'pagoda', months: 'one year' },
+    { id: 'leavenworth', n: 'Command and General Staff College', where: 'Fort Leavenworth, USA', city: 'Kansas', min: 5, max: 7, req: () => S.intellect >= 58, reqT: 'Intellect 58', fx: 'intellect+8 perf+9 leadership+2', flag: ['#b22234', '#ffffff', '#3c3b6e'], mark: 'dome', months: 'one year' },
+    { id: 'attache', n: 'Defence attaché at an embassy', where: 'Ankara, Turkey', city: 'Ankara', min: 7, max: 8, req: () => S.honor >= 55 && S.intellect >= 55, reqT: 'Honour 55, Intellect 55', fx: 'intellect+5 leadership+3 perf+6 money+700', flag: ['#e30a17', '#ffffff', '#e30a17'], mark: 'mosque', months: 'three years', away: true },
+    { id: 'rcds', n: 'Royal College of Defence Studies', where: 'London, UK', city: 'London', min: 8, max: 9, req: () => S.intellect >= 60, reqT: 'Intellect 60', fx: 'intellect+8 perf+10 leadership+3', flag: ['#012169', '#ffffff', '#c8102e'], mark: 'clock', months: 'one year' },
+  ];
+  function courseChance() { return clamp(.3 + (S.perf - 50) / 120 + (S.intellect - 50) / 160 + (S.honor - 50) / 300, .12, .9); }
+  async function applyCourse(c) {
+    if (S.ap <= 0 || busy) return;
+    busy = true; S.ap--; closeSheet(); SFX.click();
+    try {
+      S.courses = S.courses || {};
+      const p = courseChance();
+      if (Math.random() < p) {
+        S.courses[c.id] = S.age;
+        await modal('Selection board', `Selected: ${c.where}`, `You have been selected for the ${c.n} in ${c.where}. ${c.months.charAt(0).toUpperCase() + c.months.slice(1)} away from home.`, [{ t: 'Pack the bags' }], { scene: 'office', npc: 'co', mood: 'happy' });
+        CUT.LIB.__abroad = CUT.abroad(c); await CUT.play('__abroad');
+        applyFx(c.fx + (c.away ? ' ' + ['ammi', 'ayesha', 'abba'].filter(k => S.rels[k] && S.rels[k].alive).map(k => `rel.${k}-6`).join(' ') : ''));
+        log(`Completed the ${c.n}, ${c.where}.`, 'good'); S.history.push({ age: S.age, t: `${c.n}, ${c.where}` });
+        if (Object.keys(S.courses).filter(k => S.courses[k] > 0).length >= 3) META.unlock('globetrotter');
+      } else {
+        S.courses[c.id] = -S.age;
+        await modal('Selection board', 'Not selected this year', `The board picked another officer for ${c.where}. Raise your Performance and Intellect and apply again next year.`, [{ t: 'Next year, then' }], { scene: 'office' });
+        applyFx('happy-2');
+      }
+    } finally { busy = false; save(); renderAll(); }
+  }
+  function grantsDue() { S.assets = S.assets || []; S.granted = S.granted || {}; return Object.keys(GRANTS).map(Number).filter(r => S.rank >= r && !S.granted[r]); }
+  async function grantsCheck() {
+    for (const r of grantsDue()) {
+      const g = GRANTS[r]; S.granted[r] = 1;
+      const a = Object.assign({ built: false, leased: false }, g, { value: g.value });
+      S.assets.push(a); log(`Allotted: ${g.n}.`, 'good'); S.history.push({ age: S.age, t: `Allotted ${g.n}` });
+      if (g.kind === 'land') {
+        const i = await modal('Land grant', g.n, `As a Brigadier you are granted ${g.n.toLowerCase()} (worth about ${fmtMoney(g.value)}). That evening a builder calls: he will "develop" it for free if you sign a change-of-use file for his housing scheme next door.`,
+          [{ t: 'Decline. Lease the land to the farmers already on it.' }, { t: 'Sign the file. Everyone does it.' }], { scene: 'village', npc: 'haroon', mood: 'happy' });
+        if (i === 0) { a.leased = true; applyFx('honor+4 happy+2'); log('Leased the grant land to the families who farm it.'); }
+        else { a.value = Math.round(a.value * 1.6); applyFx('honor-12 money+500'); S.flags.landDeal = true; log('Signed the builder\'s change-of-use file.', 'bad'); }
+      } else {
+        await modal('Allotment', g.n, `Your ${g.n.toLowerCase()} has been allotted (worth about ${fmtMoney(g.value)}). You can build on it, or sell it, from the Career tab.`, [{ t: 'Good' }], { scene: 'avenue' });
+      }
+    }
+  }
+  function yearlyAssets() {
+    let inc = 0;
+    (S.assets || []).forEach(a => { a.value = Math.round(a.value * 1.06); if (a.kind === 'house') inc += 900 * (a.size || 1); if (a.kind === 'land' && a.leased) inc += 1200; });
+    if (inc) { S.money += inc; log(`Rent and lease income: ${fmtMoney(inc)}.`); }
+  }
+  function assetAction(i, act) {
+    const a = S.assets[i]; if (!a) return;
+    if (act === 'sell') { S.money += a.value; log(`Sold ${a.n} for ${fmtMoney(a.value)}.`, 'good'); S.assets.splice(i, 1); applyFx('happy+3'); }
+    else if (act === 'build') { const c = 18000 * (a.size || 1); if (S.money < c) return; S.money -= c; a.kind = 'house'; a.n = `House on ${a.n.replace('Residential plot, ', '')} plot`; a.value += c; applyFx('happy+6'); log('Built a house on the plot. Rented out to a bank officer\'s family.', 'good'); S.history.push({ age: S.age, t: 'Built a house' }); }
+    else if (act === 'lease') { a.leased = true; log('Leased the land to local farmers.'); }
+    SFX.choose(); save(); renderAll(); openTab('career');
+  }
+  function careerExtras() {
+    const pay = RANKS[S.rank].pay, next = RANKS[S.rank + 1];
+    const perks = Object.entries(RANK_PERKS).filter(([r]) => +r <= S.rank && (S.rank < 2 || +r >= 2)).flatMap(([, l]) => l);
+    const nextPerks = next ? (RANK_PERKS[S.rank + 1] || []) : [];
+    const assets = (S.assets || []).map((a, i) => `<div class="row-item"><span class="perk-ic">${a.kind === 'land' ? '❦' : a.kind === 'house' ? '⌂' : '▭'}</span><div class="meta"><b>${a.n}</b><span>Worth ${fmtMoney(a.value)}${a.kind === 'house' ? ` · rent ${fmtMoney(900 * (a.size || 1))} a year` : a.kind === 'land' ? (a.leased ? ` · lease ${fmtMoney(1200)} a year` : ' · idle') : ''}</span></div><div class="acts">
+      ${a.kind === 'plot' ? `<button class="btn small" data-as="${i}" data-act="build" ${S.money >= 18000 * (a.size || 1) ? '' : 'disabled'}>Build ${fmtMoney(18000 * (a.size || 1))}</button>` : ''}${a.kind === 'land' && !a.leased ? `<button class="btn small" data-as="${i}" data-act="lease">Lease</button>` : ''}<button class="btn small" data-as="${i}" data-act="sell">Sell</button></div></div>`).join('');
+    S.courses = S.courses || {};
+    const p = Math.round(courseChance() * 100);
+    const courses = COURSES.map(c => {
+      const done = S.courses[c.id] > 0, tried = S.courses[c.id] < 0 && -S.courses[c.id] === S.age, inRank = S.rank >= c.min && S.rank <= c.max, ok = inRank && c.req();
+      const st = done ? '<span class="ap">✓ Done</span>' : tried ? '<span class="ap">Next year</span>' : `<button class="btn small ${ok ? 'primary' : ''}" data-course="${c.id}" ${ok && S.ap > 0 ? '' : 'disabled'}>Apply</button>`;
+      return `<div class="row-item ${done ? 'claimed' : ''}"><span class="perk-ic">✈</span><div class="meta"><b>${c.n}</b><span>${c.where} · ${c.months} · ${RANKS[c.min].s} to ${RANKS[c.max].s}${c.reqT ? ' · needs ' + c.reqT : ''}</span></div><div class="acts">${st}</div></div>`;
+    }).join('');
+    return `<h4 class="sec-h">Pay & benefits</h4>
+      <div class="pay-card"><div><small>Monthly pay</small><b>${pay ? fmtMoney(pay / 12) : '—'}</b></div><div><small>Saved a year</small><b>${pay ? fmtMoney(Math.round(pay * .35)) : '—'}</b></div><div><small>Savings</small><b>${fmtMoney(S.money)}</b></div></div>
+      ${perks.length ? `<div class="perk-list">${perks.map(x => `<span>✓ ${x}</span>`).join('')}</div>` : ''}
+      ${next && S.rank >= 1 ? `<p class="sheet-note">Next rank, ${next.n}: pay ${fmtMoney(next.pay / 12)} a month${nextPerks.length ? ', ' + nextPerks.join(', ').toLowerCase() : ''}.</p>` : ''}
+      <h4 class="sec-h">Property</h4>${assets || '<p class="sheet-note">No property yet. Officers are allotted a plot at Major, land at Brigadier and a second plot at Major General.</p>'}
+      ${S.rank >= 2 ? `<h4 class="sec-h">Foreign courses & postings</h4><p class="sheet-note">Uses one action. Your chance of selection this year: <b class="gold">${p}%</b> (Performance, Intellect and Honour count). Each course raises your board score.</p>${courses}` : ''}`;
+  }
+
   // ---------------- endings ----------------
   const ENDINGS = window.ENDINGS || {};
   async function ending(id) {
     if (S.ended) return;
-    S.ended = id; save(); META.check(S, id);
+    S.ended = id; S.cur = null; save(); META.check(S, id);
     const E = (ENDINGS[id] || ENDINGS.retire)(S, RANKS);
     $('story').hidden = true; $('game').hidden = true; $('cut').hidden = true; $('modal').hidden = true;
     if (E.cut) await CUT.play(E.cut);
@@ -793,6 +928,15 @@
   function show(id) { ['title', 'create', 'life'].forEach(s => $(s).hidden = s !== id); }
   async function startLife(fresh) {
     show('life'); titleBG && titleBG.stop(); lifeBG.start(); renderAll();
+    if (!fresh && S.cur) {
+      // the app was closed in the middle of a scene: replay it, then any later scenes of the same year
+      busy = true;
+      try {
+        const list = EVENTS[S.age] || [], at = list.findIndex(e => e.id === S.cur); S.cur = null;
+        for (const ev of at >= 0 ? list.slice(at) : []) { if (S.ended) break; if (S.seen[ev.id] || (ev.cond && !evalC(ev.cond))) continue; await runEvent(ev); renderAll(); }
+      } finally { busy = false; save(); renderAll(); }
+      return;
+    }
     if (fresh) {
       busy = true;
       log(`You are ${S.age}, the son of a retired havildar in ${S.town}.`);
@@ -823,7 +967,9 @@
     $('btnSound').textContent = 'Sound: ' + (SFX.on ? 'On' : 'Off');
     $('btnSound').onclick = () => { const on = SFX.toggle(); $('btnSound').textContent = 'Sound: ' + (on ? 'On' : 'Off'); };
     $('btnNew').onclick = () => { SFX.unlock(); SFX.click(); show('create'); initCreate(); };
-    $('btnContinue').onclick = () => { SFX.unlock(); S = saved; S.over = {}; startLife(false); };
+    $('btnContinue').onclick = () => { SFX.unlock(); S = load() || saved; S.over = {}; startLife(false); };
+    $('btnHome').onclick = () => { if (!busy) { SFX.click(); goTitle(); } };
+    $('createBack').onclick = () => { SFX.click(); show('title'); };
     $('createForm').onsubmit = e => {
       e.preventDefault(); SFX.unlock(); SFX.choose();
       const nm = ($('inName').value || 'Ahmed Raza').trim().replace(/\s+/g, ' ').slice(0, 22) || 'Ahmed Raza';
@@ -839,18 +985,44 @@
     document.querySelectorAll('.navbtn').forEach(b => b.onclick = () => { if (!busy) openTab(b.dataset.tab); });
     $('sheetClose').onclick = closeSheet;
     $('sheet').onclick = e => { if (e.target === $('sheet')) closeSheet(); };
-    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') window.androidBack(); });
   }
   function NPC_INIT() { Object.assign(NPC, window.NPCS || {}); }
 
   // Android app hooks: the back button closes the top panel; leaving the app silences ambience
+  // Back key (Android app, or Escape on a keyboard): close the top-most thing; leave the app only from
+  // the title screen, and only after a second press.
+  let exitArm = 0;
+  const inApp = /; wv\)|Android.*Version\/[\d.]+.*Chrome/.test(navigator.userAgent);
+  function goTitle() {
+    if (S && !S.ended) save();
+    $('story').hidden = true; lifeBG && lifeBG.stop(); show('title'); titleBG && titleBG.start();
+    const sv = load(); $('btnContinue').hidden = !(sv && !sv.ended);
+  }
   window.androidBack = () => {
-    if (!$('game').hidden) return;
-    if (window.OPS && $('sheet').hidden && OPS.closeTop()) return;
-    if (!$('sheet').hidden) return closeSheet();
-    if (!$('cut').hidden) { const b = $('btnSkip'); if (b) b.click(); return; }
+    const vis = id => $(id) && !$(id).hidden;
+    if (vis('crate')) { const b = $('lootOk'); if (b) b.click(); return; }
+    const bn = document.querySelector('.ops-banner:not(.choice) button'); if (bn) return bn.click();
+    if (document.querySelector('.ops-banner.choice')) return toast('Make your decision');
+    if (vis('cut')) return $('btnSkip').click();
+    if (vis('game')) return GAMES.active ? GAMES.pause() : undefined;
+    if (vis('modal')) return toast('Choose one of the options');
+    if (vis('sheet')) return closeSheet();
+    if (window.OPS && OPS.closeTop()) return;
+    if (vis('story')) return toast('Finish this scene first');
+    if (document.querySelector('.ending-wrap')) { wipe(); location.reload(); return; }
+    if (vis('life')) { if (!busy) goTitle(); return; }
+    if (vis('create')) { show('title'); return; }
+    if (vis('title')) {
+      if (Date.now() - exitArm < 2200) { if (inApp) location.href = 'sipahsalar://exit'; return; }
+      exitArm = Date.now(); toast('Press back again to exit');
+    }
   };
-  window.androidPause = () => { try { SFX.stopPad(); } catch (e) {} save && S && save(); };
+  window.androidPause = () => { try { SFX.stopPad(); } catch (e) {} if (S) save(); };
+  // save whenever the page is hidden or closed, and every 20 seconds while playing
+  document.addEventListener('visibilitychange', () => { if (document.hidden && S) save(); });
+  window.addEventListener('pagehide', () => { if (S) save(); });
+  setInterval(() => { if (S && !S.ended && !$('life').hidden) save(); }, 20000);
   window.GAME = { bg: { pause() { titleBG && titleBG.stop(); lifeBG && lifeBG.stop(); }, resume() { if (!$('title').hidden) titleBG && titleBG.start(); else if (!$('life').hidden) lifeBG && lifeBG.start(); } }, renderStars: () => renderStars(), get S() { return S; }, RANKS, EVENTS, ageUp, runEvent, ending, applyFx, look: (mood, extra) => Object.assign(playerLook(mood), extra || {}), rankName: () => S ? RANKS[S.rank].n : '', interp: t => interp(t) };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -160,6 +160,7 @@ Abba(sad): Fell. Yes. I also used to fall a lot at your age. Usually onto someon
 @log Wrote the matric exams. {first} is sixteen and already being tested.
 
 === 17 | village | The fork in the road | id: fork
+@cut results_day
 * The matric results arrive. You pass with good marks, good enough for pre-engineering FSc at the college in town.
 @npc chacha happy
 Chacha Rafiq(happy): {first}! My nephew the scholar! Listen. In Dubai my company needs boys who can read and write English. Forty thousand dirhams a year after training. Think of it.
@@ -316,6 +317,7 @@ Abba(happy): ...Your grandfather would have stood up for this. So I will stand u
 :issb_end
 
 === 19 | issb | Second attempt | id: issb2 | if: flag.issbFail && !flag.recommended
+@cut second_chance
 * A year of PT, newspapers, and practice tests. Your second call letter arrives. Kohat again.
 @npc deputy
 Brigadier Hashmi: I remember you, number 112. What did you do with the year?
@@ -567,6 +569,7 @@ The prisoner(sad): They paid us ten thousand each. A man called Shikari. The Hun
 === 23 | hospital | Leave | id: leave1
 @scene village
 * Your first long leave. Then a phone call from Zainab: Abba collapsed in the fields. They have taken him to CMH Rawalpindi.
+@cut cmh_rush
 @npc abba sad
 Abba(sad): Don't make that face, beta. A heart that carried sixty kilo packs up mountains is allowed to complain a little.
 @npc ayesha

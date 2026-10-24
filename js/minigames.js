@@ -6,6 +6,7 @@ const GAMES = (() => {
   const pick = a => a[Math.random() * a.length | 0];
   const B = k => (window.OPS ? OPS.bonus(k) : 0);
 
+  let paused = false, cur = null;
   function makeApi(def, opts) {
     const root = $('game'), area = $('gameArea'), cv = $('gameCanvas'), dom = $('gameDom'), pad = $('gamePad');
     root.hidden = false; dom.innerHTML = ''; pad.innerHTML = ''; $('gameHud').textContent = '';
@@ -40,7 +41,8 @@ const GAMES = (() => {
       on(el, ev, f) { el.addEventListener(ev, f); cleanups.push(() => el.removeEventListener(ev, f)); },
       loop(f) {
         let last = performance.now();
-        const fr = now => { if (!alive) return; const raw = (now - last) / 1000, dt = Math.min(.05, raw); last = now; PERF.frame(raw); f(dt, now / 1000); raf = requestAnimationFrame(fr); };
+        let clock = performance.now() / 1000;
+        const fr = now => { if (!alive) return; const raw = (now - last) / 1000, dt = Math.min(.05, raw); last = now; if (!paused) { clock += dt; PERF.frame(raw); f(dt, clock); } raf = requestAnimationFrame(fr); };
         raf = requestAnimationFrame(fr);
       },
       stopLoop() { cancelAnimationFrame(raf); },
@@ -721,14 +723,31 @@ const GAMES = (() => {
       default: return 3;
     }
   }
+  // pause menu: Resume, Restart or Quit. The Back key and the pause button both open it.
+  function pauseMenu(on = !paused) {
+    if (!cur) return;
+    paused = on; const old = document.getElementById('pauseBox'); if (old) old.remove();
+    $('gamePause').textContent = paused ? '▶ Resume' : '❚❚ Pause';
+    if (!paused) return;
+    SFX.click();
+    const box = document.createElement('div'); box.className = 'gcenter pausebox'; box.id = 'pauseBox';
+    box.innerHTML = `<h4>Paused</h4><p>${$('gameTitle').textContent}</p><div class="row col"><button class="btn primary" data-p="resume">▶ Resume</button><button class="btn" data-p="restart">⟳ Restart mission</button><button class="btn danger" data-p="quit">✕ Quit mission</button></div>`;
+    box.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { const a = b.dataset.p; SFX.click(); pauseMenu(false); if (a !== 'resume') cur.quit(a); });
+    $('gameDom').appendChild(box);
+  }
   async function run(type, opts = {}) {
     const def = DEF[type];
     if (!def) return { win: true, score: 0 };
     let res;
     while (true) {
       const api = makeApi(def, opts);
-      try { res = await def.play(api, opts); } catch (e) { console.error(e); res = { win: true, score: 0, text: '' }; }
+      let quitRes; const quitP = new Promise(r => { quitRes = r; });
+      cur = { quit: how => quitRes({ win: false, score: 0, quit: how, text: how === 'restart' ? '' : 'You called off the mission.' }) };
+      paused = false; $('gamePause').hidden = false; $('gamePause').textContent = '❚❚ Pause';
+      try { res = await Promise.race([def.play(api, opts), quitP]); } catch (e) { console.error(e); res = { win: true, score: 0, text: '' }; }
+      cur = null; paused = false; $('gamePause').hidden = true; const pb = document.getElementById('pauseBox'); if (pb) pb.remove();
       api.stopLoop();
+      if (res.quit) { api.dom.innerHTML = ''; if (res.quit === 'restart') { api.end(); continue; } }
       res.stars = starsFor(type, res, opts);
       const earned = window.META ? META.recordMission(opts.key || `${type}:${opts.title || def.title}`, res.stars) : 0;
       let extra = '';
@@ -740,5 +759,5 @@ const GAMES = (() => {
     $('game').hidden = true;
     return res;
   }
-  return { run, DEF };
+  return { run, DEF, pause: () => pauseMenu(), get active() { return !!cur; } };
 })();

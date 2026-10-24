@@ -68,6 +68,7 @@ const META = (() => {
     ['legend', 'Legend in the Ranks', 'Recruit a Legendary soldier.', 20],
     ['stand10', 'The Last Stand', 'Hold 10 waves in Last Stand.', 20],
     ['gearmax', 'Fully Kitted', 'Upgrade any gear to its top level.', 15],
+    ['globetrotter', 'Globetrotter', 'Complete three foreign courses or postings in one life.', 20],
   ];
   const achById = Object.fromEntries(ACH.map(a => [a[0], a]));
   let toastFn = null;

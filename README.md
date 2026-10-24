@@ -4,11 +4,22 @@ A BitLife-style life simulator with a story: you start as a 16-year-old schoolbo
 
 ## Download for Android
 
-**[⬇ Download SipahiSeSipahsalar.apk](https://github.com/bilalmalik7/sipahi/raw/main/release/SipahiSeSipahsalar.apk)** (version 1.1, about 1.1 MB, Android 5.0 and newer, plays fully offline). Install steps are in the [Android APK](#android-apk) section below.
+**[⬇ Download SipahiSeSipahsalar.apk](https://github.com/bilalmalik7/sipahi/raw/main/release/SipahiSeSipahsalar.apk)** (version 1.2, about 1.2 MB, Android 5.0 and newer, plays fully offline). Install steps are in the [Android APK](#android-apk) section below.
 
 ## Play in a browser
 
 Open `index.html` in a browser. No build step and no server needed. Progress saves automatically in the browser (`localStorage`).
+
+## Version 1.2
+
+- **Back button that stays in the game**: Back closes the top panel, pauses a mission, skips a cutscene, or goes from your life to the title screen. Only on the title screen does it ask "Press back again to exit". There are on-screen back buttons too (⌂ in a life, ◀ on character creation, ❚❚ Pause in every mission with Resume, Restart and Quit).
+- **Automatic saving**: after every scene, action and year, every 20 seconds, and whenever the app goes to the background or closes. If the app is closed in the middle of a story scene, Continue replays that scene from its start. A small "✓ Saved" note shows when it saves.
+- **Activities with trade-offs**: every activity shows what goes up (green), what goes down (red) and any risk before you tap it. Chai with friends raises happiness and friendships but costs money and study time; extra duty raises performance but costs health and family time; sport and night patrols can injure you; investing your savings can pay off or wipe them out.
+- **Pay, perks and property**: the Career tab shows your monthly pay, savings and the perks of each rank (married quarters, staff car and driver, orderly, flag car, Army House). Officers are allotted a residential plot at Major, agricultural land at Brigadier (with a builder's tempting offer) and a second plot at Major General. Build a house to earn rent, lease the land, or sell.
+- **Foreign courses and postings**: apply for courses and postings abroad, such as Fort Benning, the Turkish commando course, Sandhurst, a Saudi deputation, UN observer duty, Nanjing, Fort Leavenworth, a defence attaché post in Ankara and the Royal College of Defence Studies in London. Selection depends on Performance, Intellect and Honour; each one plays a travel cutscene and raises your promotion score.
+- **Martial law branch**: as Chief of the Army Staff during an election crisis you can hold to the oath or impose martial law. Martial law plays about four and a half minutes of cutscenes: the night of the takeover, trucks, tanks and helicopters in the capital, nationwide curfew, jets over Islamabad, the address to the nation, the referendum and the oath as President, a 21-gun salute, motorcades and state visits, and the years that follow. Your decisions along the way (the Prime Minister's fate, the press, the election promise) lead to three different endings.
+- **Operations decisions**: before every mission choose Cautious, By the book or Bold, which changes the mission and the pay. After each boss you decide whether to take him alive or let your men settle it; your name (⚖) changes how each region's story ends, and the final one.
+- **More cutscenes**: 23 new life-story cutscenes, a cinematic intro for each Operations mission type, the foreign-posting journeys and the martial-law sequence. More than 120 in all.
 
 ## Operations: the campaign mode
 
@@ -39,14 +50,14 @@ New one-finger missions: **Tank Duel** (drag back and release to fire, with wind
 - **Career**: promotion boards score you on 60% Performance + 20% Leadership + 20% Honour. Get passed over three times and you are retired. Misconduct can get you reduced in rank or dismissed.
 - **Story scenes**: your character stands facing you while the story plays. Choices change your stats, relationships and future scenes.
 - **Missions** (14 types): tank duel, gunship, HALO jump, hold the post, hand-to-hand fight, firing range, sniper, stealth, obstacle course, cipher decryption, bomb defusal, route memorisation, find-the-mole deduction, timed command decisions.
-- **Cutscenes** (80): letterboxed, colour-graded cinematics with camera moves, rim-lit soldiers and fight choreography: the school fight, the night train to Kakul, boxing finals, night navigation, the avalanche, the ambush, a sniper duel, SSG hell week, the HALO jump, the bus siege, tailing a courier through Saddar, the port bomb, the car chase, the rooftop knife fight, the war game, the flood rescue, the kidnapping, the earthquake rescue, the stadium siege, the dam duel, tanks on Constitution Avenue, the standoff at the TV station, the change of command and a closing montage.
+- **Cutscenes** (more than 120): letterboxed, colour-graded cinematics with camera moves, rim-lit soldiers and fight choreography: the school fight, the night train to Kakul, boxing finals, night navigation, the avalanche, the ambush, a sniper duel, SSG hell week, the HALO jump, the bus siege, tailing a courier through Saddar, the port bomb, the car chase, the rooftop knife fight, the war game, the flood rescue, the kidnapping, the earthquake rescue, the stadium siege, the dam duel, tanks on Constitution Avenue, the standoff at the TV station, the change of command and a closing montage.
 - **Look**: layered 2.5D backgrounds (fractal mountains with snow and rock shading, drifting clouds, god rays, rain, snow, mist, smoke, swaying trees, people and vehicles moving in the distance) under a slowly moving camera; characters are lit to match each scene, breathe, shift their weight, glance around, nod and gesture while talking.
 
 ## Progress that carries across lives
 
 - **Merit Stars**: earned from every mission (1–3 star ratings, extra for a new best), achievements and the daily ration.
 - **Perks** (6 perks, 3 levels each): Marksman, Commando, Iron Body, Tactician, Silver Tongue, Staff Officer. They apply to every future life.
-- **Achievements**: 44, each paying Merit Stars.
+- **Achievements**: 45, each paying Merit Stars.
 - **Training Ground**: replay 13 drills, including three playable assault missions, for better ratings.
 - **Daily ration**: a login streak that pays more each consecutive day.
 - **Settings**: text speed, auto-advance, sound, graphics.
@@ -75,7 +86,8 @@ A full life takes roughly 3–4 hours to play through with the missions; differe
 ## Files
 
 - `js/engine.js`: life simulation, year loop, story interpreter, promotions, activities, family, saves, endings
-- `js/story.js` to `js/story5.js`: characters and the story script (ages 16–59) and endings; `story5.js` also holds the cutscenes for its chapters
+- `js/story.js` to `js/story6.js`: characters and the story script (ages 16–59) and endings; `story5.js` and `story6.js` (the martial-law branch) also hold the cutscenes for their chapters
+- `js/cutscenes2.js`: cutscenes for the later life chapters, Operations mission intros and foreign postings
 - `js/events.js`: random yearly events, the mole case, timed-decision scenarios
 - `js/character.js`: the front-facing SVG character (uniforms, insignia, ribbons, ageing)
 - `js/scenes.js`: animated canvas backgrounds
@@ -102,7 +114,7 @@ ME(determined): Look at me, not at them.        (you speak, with a mood)
 
 ## Android APK
 
-A ready-to-install APK is in `release/SipahiSeSipahsalar.apk` (version 1.1, about 1.1 MB, Android 5.0 and newer, plays fully offline, fonts included).
+A ready-to-install APK is in `release/SipahiSeSipahsalar.apk` (version 1.2, about 1.2 MB, Android 5.0 and newer, plays fully offline, fonts included).
 
 Install on a phone: download the file, open it, allow "Install unknown apps" for your browser or file manager when asked, then tap Install. The app runs full screen in landscape or portrait, keeps the screen on, vibrates on hits and explosions, and the Back button closes open panels (press twice quickly to exit).
 

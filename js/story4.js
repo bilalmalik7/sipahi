@@ -131,6 +131,7 @@ Danish Mirza(angry): Careful, havildar's son. My father remembers names.
 @npc off
 
 === 31 | quetta | Paying up | id: bet_paid | if: flag.betDanish
+@cut mess_bet
 @if win -> won_bet
 @npc danish happy
 Danish Mirza(happy): Fifty thousand. I'll take it in cash. Better luck in the real war, Major.
@@ -144,6 +145,7 @@ Danish Mirza(angry): Fifty thousand. Count it if you like. Enjoy it. It's the la
 @npc off
 
 === 40 | office | The Cherat file | id: cherat_file | if: flag.reportedCall || flag.heardCall || flag.confronted
+@cut old_file
 @npc dg
 @if flag.reportedCall -> rep_payoff
 General Asfandyar: You heard him on the phone in Cherat fourteen years ago, didn't you? And you told nobody.
@@ -160,6 +162,7 @@ General Asfandyar: You saw him first. Before any of us. Remember that, when you 
 @tease He knows you know. And he knows where your best friend lives.
 
 === 44 | office | Doors that open | id: rival2
+@cut gold_card
 @npc danish happy
 Danish Mirza(happy): Brigadier Mirza, since March. Six months ahead of you. Don't take it personally, it's just how the world works.
 Danish Mirza: Join us. My father's circle. Dinners, golf, the right word in the right ear at the right board. Doors open.
@@ -240,6 +243,7 @@ Khattak: Here. My wings from 1987. I wore them badly at the end. Wear them bette
 :tr_end
 
 === 51 | dam | The river | id: river_ev | if: flag.khattakFell
+@cut daughter_letter
 * A letter in a girl's handwriting. Khattak's daughter, a medical student in Peshawar.
 * "Sir, I know what my father became. But I also know what he was before. He kept your photograph from Kakul in his desk. Please tell me he was a good teacher."
 ? What do you write back?
@@ -247,6 +251,7 @@ Khattak: Here. My wings from 1987. I wore them badly at the end. Wear them bette
 - Do not write back. {}
 
 === 53 | office | The messenger | id: messenger | if: flag.coup || flag.silentCoup || flag.reportedCoup
+@cut night_car
 @npc danish
 @if flag.danishCircle -> circle
 Danish Mirza: Malik sent me. He wants to know where you stand. So do I, frankly.

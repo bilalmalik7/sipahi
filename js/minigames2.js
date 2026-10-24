@@ -173,7 +173,7 @@
           // tanks
           drawTank(ctx, pl.x * w, gy(pl.x) * h, s, slope(pl.x), pl.aim, '#56603a', 1, pl.flash, pl.hp / maxHp, true, t);
           enemies.forEach(e => {
-            if (e.dead) { ctx.save(); ctx.globalAlpha = Math.max(.35, 1 - e.fall * .4); drawTank(ctx, e.x * w, gy(e.x) * h, s, slope(e.x) + .12, e.aim - .5, '#2a2622', -1, 0, null, false, t); ctx.restore(); SCENES.helpers.smoke(ctx, st, 'tk' + e.x, e.x * w, gy(e.x) * h - s * .4, dt, '60,55,50', 6, 1.2); SCENES.helpers.fire(ctx, e.x * w, gy(e.x) * h - s * .3, s * .3, t, st, dt); return; }
+            if (e.dead) { ctx.save(); ctx.globalAlpha = Math.max(.35, 1 - e.fall * .4); drawTank(ctx, e.x * w, gy(e.x) * h, s, slope(e.x) + .12, e.aim - .5, '#2a2622', -1, 0, null, false, t); ctx.restore(); SCENES.helpers.smoke(ctx, st, 'sm_tk' + e.x, e.x * w, gy(e.x) * h - s * .4, dt, '60,55,50', 6, 1.2); SCENES.helpers.fire(ctx, e.x * w, gy(e.x) * h - s * .3, s * .3, t, st, dt); return; }
             drawTank(ctx, e.x * w, gy(e.x) * h, s, slope(e.x), e.aim - slope(e.x), o.enemyColor || '#6a6250', -1, e.flash, e.hp / 100, false, t);
             if (e.cd < 1 && !over) { ctx.fillStyle = `rgba(255,60,40,${.5 + .5 * Math.sin(t * 18)})`; ctx.font = font(22, 'Saira Stencil One'); ctx.textAlign = 'center'; ctx.fillText('!', e.x * w, gy(e.x) * h - s * 1.2); ctx.textAlign = 'left'; }
           });
@@ -255,7 +255,7 @@
             const sp = (.06 + tg.lane * .09) + tg.vx; tg.x -= sp * dt; tg.t += dt; tg.flash = Math.max(0, tg.flash - dt);
             const s = Math.min(h, w * 1.3) * (.07 + tg.lane * .1), x = tg.x * w, y = h * (.64 + tg.lane * .3);
             tg.box = [x - s * .9, y - s * .8, s * 1.8, s * .85];
-            if (!tg.alive) { tg.fall += dt; ctx.globalAlpha = Math.max(0, 1 - tg.fall * .5); truck(ctx, x, y, s, '#1c1a18', tg.kind === 'men' ? 'jeep' : tg.kind, t); ctx.globalAlpha = 1; SCENES.helpers.smoke(ctx, st, 'h' + tg.t.toFixed(0) + tg.lane, x, y - s * .5, dt, '50,46,42', 5, s / 60); continue; }
+            if (!tg.alive) { tg.fall += dt; ctx.globalAlpha = Math.max(0, 1 - tg.fall * .5); truck(ctx, x, y, s, '#1c1a18', tg.kind === 'men' ? 'jeep' : tg.kind, t); ctx.globalAlpha = 1; SCENES.helpers.smoke(ctx, st, 'sm_h' + tg.t.toFixed(0) + tg.lane, x, y - s * .5, dt, '50,46,42', 5, s / 60); continue; }
             if (tg.kind === 'men') { for (let k = 0; k < 3; k++) FIG.draw(ctx, x + (k - 1) * s * .45, y, s * 1.2, FIG.lerp(FIG.P.run1, FIG.P.run2, (Math.sin(t * 9 + k * 2) + 1) / 2), { color: tg.flash > 0 ? '#fff' : '#2a2420', facing: -1, rifle: true, scarf: '#3a2a20' }); }
             else truck(ctx, x, y, s, tg.flash > 0 ? '#ffffff' : { truck: '#6a5e44', jeep: '#4e4a3a', aa: '#5a3a30' }[tg.kind] || '#e8e6df', tg.kind, t);
             if (tg.kind === 'aa' && !over) {
@@ -398,7 +398,7 @@
             const gyv = h * .88, zX = zx * w;
             ctx.fillStyle = 'rgba(60,140,70,.35)'; ctx.beginPath(); ctx.ellipse(zX, gyv, w * .06, h * .02, 0, 0, 7); ctx.fill();
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(zX, gyv, w * .02, h * .007, 0, 0, 7); ctx.stroke();
-            SCENES.helpers.smoke(ctx, st, 'zone', zX, gyv, dt, '90,220,120', 7, 1.1);
+            SCENES.helpers.smoke(ctx, st, 'sm_zone', zX, gyv, dt, '90,220,120', 7, 1.1);
             const k = clamp(alt / Math.max(1, pullAlt), 0, 1), y = gyv - k * h * .72 - h * .02;
             canopy(ctx, px * w, y, h * .16, vx * 1.6 + Math.sin(t * 1.5) * .04);
             if (alt <= 0 && !over) {

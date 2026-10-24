@@ -111,6 +111,7 @@ Bilal(happy): Took your time, yaar. I was starting to think you'd become a gener
 @history Rescued Bilal in the Upper Neelum
 
 === 43 | office | The board of inquiry | id: inquiry43
+@cut board
 @if flag.rogue && !flag.authorised -> rogue
 @goto inq_haroon
 :rogue
@@ -174,6 +175,7 @@ Ayesha(angry): You went up a mountain in the dark, after a man who wants you dea
 === 44 | valley | Return to the valley | id: brigade
 @promote Brigadier
 @title Brigade Command | Wadi-e-Noor, twenty years later
+@cut valley_school
 * Your brigade's area includes a valley you know. The school you used as a firebase is a school again, with a cricket pitch.
 @npc elder
 @if flag.promisedValley -> promised
@@ -207,6 +209,7 @@ Malik Gul Bahadur: Now there is a new problem. Young men with nothing to do, and
 @log Commanded earthquake relief in the northern areas.
 
 === 46 | home | An envelope | id: letter
+@cut envelope
 * An envelope with no stamp, delivered by hand to your quarters. Inside, one page in a familiar slanted handwriting.
 * "{rank}. You and I are the same. We both believed the oath. The difference is that I finished reading it, and you are still on the first page. One day the system will pass you over too, and then you will remember me. J.K."
 ? You read it three times.
@@ -222,6 +225,7 @@ Rabia Qazi: Brigadier? Rabia Qazi, from Dawn newspaper. I'm writing about the Ne
 @npc off
 
 === 47 | village | The next generation | id: nextgen | if: kids>0
+@cut son_photo
 @npc son
 Son: Abbu. I've decided. I'm sitting for ISSB next year. I want to go to Kakul.
 ? Your son, at the age you were when you first saw the photograph on the wall.
@@ -241,6 +245,7 @@ Daughter: And I've decided too, since we're deciding things. Medicine. Like Ammi
 === 48 | office | Two stars | id: majgen
 @promote Major General
 @title General Officer Commanding | Lahore
+@cut flag_car
 * A division of fifteen thousand men. A flag on your car. A driver who calls you "General Sahib" and has opinions about cricket.
 @npc bilal
 @if flag.bilalHurt -> b_hurt
@@ -341,6 +346,7 @@ Khattak: A soldier who obeys an unlawful order... you remembered.
 @log Ended Shikari at Kohsar Dam.
 
 === 51 | home | Ammi | id: ammi51
+@cut ammi_hands
 @npc ammi happy
 Ammi(happy): A general. My son is a general. You know what your father said, the day you were born? He said "this one will be an officer, look at how he cries, like he's giving orders."
 ? Your mother's hands are thin and spotted now.
@@ -352,9 +358,11 @@ Ammi(happy): A general. My son is a general. You know what your father said, the
 === 52 | office | Three stars | id: ltgen
 @promote Lieutenant General
 @title Corps Commander | Rawalpindi
+@cut headlines
 * A corps of sixty thousand men. Your name is in the newspapers now, in the speculation columns about who will be the next Chief.
 
 === 53 | office | The conversation | id: coup1 | if: rank>=9
+@cut malik_room
 @npc malik
 General Tariq Malik: Sit, {first}. You've seen the news. The government is paralysed. The economy is in pieces. The politicians are robbing the country blind while the people eat grass.
 General Tariq Malik: Four corps commanders have agreed. We need a fifth. We need you. One night, no bloodshed. A caretaker setup, elections in two years. Say three. The country will thank us.
@@ -473,6 +481,7 @@ General Rauf: The baton is heavier than it looks. Half a million soldiers and th
 @log Took command of the Pakistan Army as Chief of the Army Staff.
 
 === 57 | office | The offer | id: extension | if: rank==11
+@cut pm_house
 @npc pm
 The Prime Minister: General, the country needs continuity. I'd like to give you a three-year extension. Parliament will approve it. You've earned it.
 ? Extensions have been given before. Many people think they shouldn't be.
@@ -481,6 +490,7 @@ The Prime Minister: General, the country needs continuity. I'd like to give you 
 @npc off
 
 === 57 | office | Retirement | id: retire_nogen | if: rank<11
+@cut last_drive
 * Your last day in uniform. The staff car drives you home for the last time. The driver, who has opinions about cricket, cries a little and pretends it's the dust.
 @if flag.reportedCoup || flag.turned -> retire_hero
 @goto retire_go
@@ -498,7 +508,7 @@ Ammi(sad): Don't cry, General. Generals don't cry. Your father cried, though. In
 @fx happy-15
 @log Ammi passed away.
 
-=== 59 | pma | The last parade | id: lastparade | if: rank==11
+=== 59 | pma | The last parade | id: lastparade | if: rank==11 && !flag.martial
 @title The Last Parade | Pakistan Military Academy, Kakul
 * The Commandant has invited you to review the passing out parade of a new course. The gravel square. The arches. The mountains, exactly the same.
 @if flag.sonArmy -> son_par
