@@ -761,3 +761,6 @@ const GAMES = (() => {
   }
   return { run, DEF, pause: () => pauseMenu(), get active() { return !!cur; } };
 })();
+
+// make the module reachable as window.X too (top-level const is not a window property)
+ window.GAMES = GAMES;

@@ -735,3 +735,15 @@ canvas { display: block; }
 .saved-note.show { animation: savedIn 1.8s ease both; }
 @keyframes savedIn { 0% { opacity: 0; transform: translateY(-4px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .ops-toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
+
+/* ---------- living characters: CHAR's life loop drives these, so the CSS loops step aside ---------- */
+.char.alive .sway, .char.alive .body, .char.alive .headg, .char.alive.talking .headg, .char.alive .lid { animation: none; }
+.char.alive .iris { transition: transform .18s cubic-bezier(.3,.7,.3,1); }
+.relrow { display: grid; grid-template-columns: 110px 1fr 34px; gap: 8px; align-items: center; font-size: 13px; }
+.relrow .bar, .campaign .bar { height: 8px; border-radius: 8px; background: rgba(0,0,0,.4); overflow: hidden; }
+.relrow .bar i, .campaign .bar i { display: block; height: 100%; }
+.relrow b { font-family: var(--label); text-align: right; }
+.campaign { display: flex; flex-direction: column; gap: 5px; background: rgba(90,62,10,.25); border: 1px solid var(--brass); border-radius: 8px; padding: 9px 12px; }
+.campaign b { font-family: var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--brass); font-size: 13px; }
+.campaign .bar i { background: linear-gradient(90deg, var(--brass), #f6d27a); }
+.campaign span { font-size: 12.5px; color: var(--khaki); }

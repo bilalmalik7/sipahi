@@ -60,6 +60,7 @@ const META = (() => {
     ['ops_frontier', 'Mountain Lion', 'Clear the Frontier in Operations.', 20],
     ['ops_karachi', 'City Guardian', 'Clear Karachi in Operations.', 20],
     ['ops_desert', 'Desert Fox', 'Clear Balochistan in Operations.', 25],
+    ['ops_isi', 'The Long Game', 'Clear the ISI theatre in Operations.', 30],
     ['ops_final', 'The Hunter Caught', 'Win Operation Sipahsalar.', 40],
     ['ops_all', 'Legend of the Army', 'Clear every Operations theatre.', 50],
     ['lvl10', 'Seasoned Officer', 'Reach Service Level 10.', 15],
@@ -145,3 +146,6 @@ const META = (() => {
     get settings() { return M.settings; },
   };
 })();
+
+// make the module reachable as window.X too (top-level const is not a window property)
+ window.META = META;

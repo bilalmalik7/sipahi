@@ -707,6 +707,11 @@ const CUT = (() => {
     if (o.tint) { offc.fillStyle = o.tint; offc.fillRect(0, 0, off.width, off.height); }
     offc.globalCompositeOperation = 'source-over';
     ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+    // a living pose: slow weight shift and head bob, livelier while speaking
+    { const seed = (who.length * 7 + (o.x || .5) * 13), talkK = o.talk ? 1 : 0;
+      const rot = Math.sin(t * .55 + seed) * .012 + Math.sin(t * 1.3 + seed * 2) * .004 + talkK * Math.sin(t * 4.6 + seed) * .012;
+      const sx = Math.sin(t * .42 + seed) * dw * .012, sy = Math.sin(t * 2.6 + seed) * talkK * dh * .004;
+      ctx.translate(cx + sx, by + sy); ctx.rotate(rot); ctx.translate(-cx, -by); }
     // rim light: a tinted copy just behind, offset toward the light
     off2.width = off.width; off2.height = off.height; off2c.drawImage(off, 0, 0); off2c.globalCompositeOperation = 'source-in'; off2c.fillStyle = `rgb(${o.rim || lc})`; off2c.fillRect(0, 0, off2.width, off2.height); off2c.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = (o.alpha ?? 1) * .6; ctx.drawImage(off2, cx - dw / 2 - 4 + side * 3, by - dh - 4 - 1); ctx.globalAlpha = o.alpha ?? 1;
@@ -1036,7 +1041,9 @@ const CUT = (() => {
       const tension = /ambush|raid|chase|rooftop|duel|stadium|nvg|bilal|avalanche|un|earthquake|kidnap|coup|tv_station|bus|port|sniper|school_fight|hellweek/.test(name);
       const baseGrade = tension ? 'contrast(1.12) saturate(.88)' : 'contrast(1.06) saturate(1.06)';
       const baseRim = tension ? 'rgba(255,190,140,.42)' : 'rgba(255,238,210,.3)';
-      SFX.pad(tension ? 'tense' : name === 'janaza' ? 'sad' : 'proud');
+      const moodOf = /wedding|eid|sister_wedding/.test(name) ? 'wedding' : /janaza|abba_farewell|letter|daughter|exile|ammi|nadia_end|old_woman|last_drive|envelope|son_photo/.test(name) ? 'sad'
+        : /ml_president|ml_handover|promotion|coas|passing_out|battalion|flag_car|^ops_win|abroad/.test(name) ? 'proud' : /results_day|second_chance|kakul_return|valley_school|cmh_rush/.test(name) ? 'calm' : (tension || /^ml_|^ops_|__opm|malik|board|old_file|night_car|post_night|tank_column|gunship|c130/.test(name)) ? 'tense' : 'proud';
+      SFX.pad(moodOf);
       function setCap() { const s = shots[i]; const tx = v => typeof v === 'function' ? v() : (window.GAME && GAME.S ? GAME.interp(v || '') : (v || '')); cap.innerHTML = (s.who ? `<span class="who">${tx(s.who)}</span>` : '') + tx(s.cap); cap.style.animation = 'none'; void cap.offsetWidth; cap.style.animation = 'capIn .6s both'; }
       setCap();
       function finish() { if (done) return; done = true; cancelAnimationFrame(running); delete FIG.style.rim; delete FIG.style.rimSide; cv.style.filter = ''; SFX.stopPad(); el.hidden = true; cap.textContent = ''; document.getElementById('btnSkip').onclick = null; resolve(); }
@@ -1070,3 +1077,6 @@ const CUT = (() => {
   }
   return { play, LIB, seqPose, portrait };
 })();
+
+// make the module reachable as window.X too (top-level const is not a window property)
+ window.CUT = CUT;

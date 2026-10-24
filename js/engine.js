@@ -666,9 +666,13 @@
       sheet('Settings', `<div class="setrow"><b>Text speed</b><div class="seg">${['slow', 'normal', 'fast', 'instant'].map(v => `<button class="${st.speed === v ? 'on' : ''}" data-speed="${v}">${v}</button>`).join('')}</div></div>
         <div class="setrow"><b>Auto-advance dialogue</b><div class="seg"><button class="${st.auto ? '' : 'on'}" data-auto="0">Off</button><button class="${st.auto ? 'on' : ''}" data-auto="1">On</button></div></div>
         <div class="setrow"><b>Graphics</b><div class="seg">${[['auto', 'Auto'], ['high', 'High'], ['saver', 'Battery saver']].map(([v, l]) => `<button class="${PERF.mode === v ? 'on' : ''}" data-gfx="${v}">${l}</button>`).join('')}</div></div>
-        <div class="setrow"><b>Sound</b><div class="seg"><button class="${SFX.on ? 'on' : ''}" data-snd="1">On</button><button class="${SFX.on ? '' : 'on'}" data-snd="0">Off</button></div></div>
+        <div class="setrow"><b>Music</b><div class="seg"><button class="${MUSIC.on ? 'on' : ''}" data-mus="1">On</button><button class="${MUSIC.on ? '' : 'on'}" data-mus="0">Off</button></div></div>
+        <div class="setrow"><b>Music volume</b><div class="seg">${[['.3', 'Low'], ['.6', 'Medium'], ['1', 'High']].map(([v, l]) => `<button class="${Math.abs(MUSIC.vol - v) < .05 ? 'on' : ''}" data-mvol="${v}">${l}</button>`).join('')}</div></div>
+        <div class="setrow"><b>Sound effects</b><div class="seg"><button class="${SFX.on ? 'on' : ''}" data-snd="1">On</button><button class="${SFX.on ? '' : 'on'}" data-snd="0">Off</button></div></div>
         <p class="sheet-note">Lives started: ${M.lives}. Merit Stars earned in total: ${M.totalStars}. Daily ration streak: ${M.daily.streak} day${M.daily.streak === 1 ? '' : 's'}.</p>`);
       $('sheetBody').querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { META.setSetting('speed', b.dataset.speed); openMeta('settings'); });
+      $('sheetBody').querySelectorAll('[data-mus]').forEach(b => b.onclick = () => { SFX.unlock(); if ((b.dataset.mus === '1') !== MUSIC.on) MUSIC.toggle(); openMeta('settings'); });
+      $('sheetBody').querySelectorAll('[data-mvol]').forEach(b => b.onclick = () => { MUSIC.setVol(+b.dataset.mvol); openMeta('settings'); });
       $('sheetBody').querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { PERF.set(b.dataset.gfx); openMeta('settings'); });
       $('sheetBody').querySelectorAll('[data-auto]').forEach(b => b.onclick = () => { META.setSetting('auto', b.dataset.auto === '1'); openMeta('settings'); });
       $('sheetBody').querySelectorAll('[data-snd]').forEach(b => b.onclick = () => { if ((b.dataset.snd === '1') !== SFX.on) SFX.toggle(); $('btnSound').textContent = 'Sound: ' + (SFX.on ? 'On' : 'Off'); openMeta('settings'); });
@@ -785,7 +789,8 @@
         <h4 style="margin:8px 0 0;font-family:var(--label);letter-spacing:.1em;text-transform:uppercase;color:var(--khaki)">Life milestones</h4>
         <div class="timeline">${S.history.map(h => `<div><b>${h.age}</b><span>${h.t}</span></div>`).join('') || '<span class="sheet-note">Your story has just begun.</span>'}</div>
         <button class="btn danger small" id="btnWipe" style="margin-top:14px;align-self:flex-start">Abandon this life</button><div id="wipeConfirm"></div>`;
-      sheet('Service Record', html);
+      const all = Object.values(EVENTS).flat().filter((e, i, A) => A.findIndex(x => x.id === e.id) === i), seen = all.filter(e => S.seen[e.id]).length;
+      sheet('Service Record', `<div class="campaign"><b>Story campaign</b><div class="bar"><i style="width:${(seen / all.length * 100).toFixed(0)}%"></i></div><span>${seen} of ${all.length} chapters seen in this life. Different choices open different chapters.</span></div>` + html);
       $('btnWipe').onclick = () => { $('wipeConfirm').innerHTML = '<p class="sheet-note">This deletes the save. Sure?</p><button class="btn danger small" id="btnWipe2">Yes, start over</button>'; $('btnWipe2').onclick = () => { wipe(); location.reload(); }; };
     }
   }
@@ -869,6 +874,11 @@
     else if (act === 'lease') { a.leased = true; log('Leased the land to local farmers.'); }
     SFX.choose(); save(); renderAll(); openTab('career');
   }
+  const RELS = [['rel_afg', 'Afghanistan'], ['rel_uae', 'UAE'], ['rel_chn', 'China'], ['rel_irn', 'Iran'], ['rel_nbr', 'The neighbour'], ['rel_baloch', 'Baloch tribes']];
+  function relationsHtml() {
+    const got = RELS.filter(([k]) => S.vars[k] !== undefined); if (!got.length) return '';
+    return `<h4 class="sec-h">Foreign relations</h4><p class="sheet-note">How much these partners trust you personally, from your intelligence and command decisions.</p>` + got.map(([k, n]) => { const v = clamp(50 + S.vars[k], 0, 100); return `<div class="relrow"><span>${n}</span><div class="bar"><i style="width:${v}%;background:${v >= 60 ? '#22a95f' : v >= 40 ? '#e0a83e' : '#d04a33'}"></i></div><b>${v}</b></div>`; }).join('');
+  }
   function careerExtras() {
     const pay = RANKS[S.rank].pay, next = RANKS[S.rank + 1];
     const perks = Object.entries(RANK_PERKS).filter(([r]) => +r <= S.rank && (S.rank < 2 || +r >= 2)).flatMap(([, l]) => l);
@@ -887,6 +897,7 @@
       ${perks.length ? `<div class="perk-list">${perks.map(x => `<span>✓ ${x}</span>`).join('')}</div>` : ''}
       ${next && S.rank >= 1 ? `<p class="sheet-note">Next rank, ${next.n}: pay ${fmtMoney(next.pay / 12)} a month${nextPerks.length ? ', ' + nextPerks.join(', ').toLowerCase() : ''}.</p>` : ''}
       <h4 class="sec-h">Property</h4>${assets || '<p class="sheet-note">No property yet. Officers are allotted a plot at Major, land at Brigadier and a second plot at Major General.</p>'}
+      ${relationsHtml()}
       ${S.rank >= 2 ? `<h4 class="sec-h">Foreign courses & postings</h4><p class="sheet-note">Uses one action. Your chance of selection this year: <b class="gold">${p}%</b> (Performance, Intellect and Honour count). Each course raises your board score.</p>${courses}` : ''}`;
   }
 
@@ -978,6 +989,8 @@
       wipe(); startLife(true);
     };
     $('btnAge').onclick = ageUp;
+    // browsers start audio only after a tap; the first tap anywhere starts the music
+    document.addEventListener('pointerdown', () => SFX.unlock(), { passive: true });
     META.onAchievement(achToast);
     document.querySelectorAll('[data-meta]').forEach(b => b.onclick = () => { if (!busy) openMeta(b.dataset.meta); });
     renderStars();

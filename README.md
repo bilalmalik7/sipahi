@@ -4,11 +4,22 @@ A BitLife-style life simulator with a story: you start as a 16-year-old schoolbo
 
 ## Download for Android
 
-**[⬇ Download SipahiSeSipahsalar.apk](https://github.com/bilalmalik7/sipahi/raw/main/release/SipahiSeSipahsalar.apk)** (version 1.2, about 1.2 MB, Android 5.0 and newer, plays fully offline). Install steps are in the [Android APK](#android-apk) section below.
+**[⬇ Download SipahiSeSipahsalar.apk](https://github.com/bilalmalik7/sipahi/raw/main/release/SipahiSeSipahsalar.apk)** (version 1.3, about 1.2 MB, Android 5.0 and newer, plays fully offline). Install steps are in the [Android APK](#android-apk) section below.
 
 ## Play in a browser
 
 Open `index.html` in a browser. No build step and no server needed. Progress saves automatically in the browser (`localStorage`).
+
+## Version 1.3
+
+- **Background music**, generated live in the game so the APK stays small: a military-band march on the title screen, rabab, flute and tabla over a drone for daily life, and separate pieces for tension, missions, sad moments, proud moments, the Operations map and weddings (dhol and shehnai). It changes with the screen and crossfades. Music on/off and volume are in Settings, separate from sound effects.
+- **Characters that move like people**: weight shifts, breathing that lifts the shoulders, eyes that look around with the head following, arms that swing a moment behind the body, random single and double blinks, nods, shrugs and glances, and livelier heads and eyebrows while talking. Cutscene close-ups sway and move as they speak.
+- **Married life**: six chapters with your wife, from your first married quarters to her cardiology career, hardship postings, your tenth anniversary, the children's school day, her promotion and the quiet house after the children leave. Each has a cutscene and a choice that changes your bond.
+- **Balochistan**: a convoy ambush on the coastal highway (playable), an attack on the engineers' hotel in Gwadar (playable), and a jirga with the tribal elders, each with cutscenes and decisions about force or talks.
+- **ISI briefings**: five intelligence chapters at Aabpara with briefings on relations with Afghanistan, the UAE, China, Iran and a neighbouring country: a hostage handover across the Afghan border, freezing a network's money in Dubai, protecting Chinese engineers on the corridor, a border crisis at Taftan, and back-channel talks on neutral ground. Your choices build a **Foreign relations** panel in the Career tab.
+- **ISI: The Long Game**: a new eighth Operations theatre of eight missions before Operation Sipahsalar.
+- **Story campaign progress** in the Record tab shows how many of the 81 chapters you have seen in this life.
+- **Fix**: missions now pay Merit Stars, XP and supplies, gear and squad bonuses apply in every mission, your squad buddy fights beside you, and Back closes the Operations screen. In 1.1 and 1.2 these hooks were silently skipped.
 
 ## Version 1.2
 
@@ -25,7 +36,7 @@ Open `index.html` in a browser. No build step and no server needed. Progress sav
 
 Tap **Operations** on the title screen (or **⚑ Ops** in a life) for a mission-by-mission campaign you can play for hours, separate from the life story:
 
-- **7 theatres, 56 missions**: Kakul, Siachen, the Line of Control, the Frontier, Karachi, Balochistan and Operation Sipahsalar. Each theatre is a map of 8 missions ending in a boss fight, with an intro cutscene, a boss cutscene and a victory cutscene.
+- **8 theatres, 64 missions**: Kakul, Siachen, the Line of Control, the Frontier, Karachi, Balochistan, ISI: The Long Game, and Operation Sipahsalar. Each theatre is a map of 8 missions ending in a boss fight, with an intro cutscene, a boss cutscene and a victory cutscene.
 - **Stars**: every mission is rated 1 to 3 stars. Later theatres open when you beat the previous boss and have enough stars in total.
 - **Service Level**: every mission you play anywhere in the game (campaign, story or Training Ground) pays XP and supplies. Each level pays supplies, and every few levels a crate.
 - **Armory**: 6 pieces of gear with 5 upgrades each (rifle, body armour, optics, grenades, boots, medkit). Upgrades help in every mode.
@@ -114,7 +125,7 @@ ME(determined): Look at me, not at them.        (you speak, with a mood)
 
 ## Android APK
 
-A ready-to-install APK is in `release/SipahiSeSipahsalar.apk` (version 1.2, about 1.2 MB, Android 5.0 and newer, plays fully offline, fonts included).
+A ready-to-install APK is in `release/SipahiSeSipahsalar.apk` (version 1.3, about 1.2 MB, Android 5.0 and newer, plays fully offline, fonts included).
 
 Install on a phone: download the file, open it, allow "Install unknown apps" for your browser or file manager when asked, then tap Install. The app runs full screen in landscape or portrait, keeps the screen on, vibrates on hits and explosions, and the Back button closes open panels (press twice quickly to exit).
 

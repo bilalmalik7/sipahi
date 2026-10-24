@@ -97,10 +97,12 @@ const CHAR = (() => {
       s += `<rect class="lid" x="${x - 8}" y="86.2" width="16" height="10.6" fill="${skin}"/>`;
     });
     // brows: thick base stroke plus fine hair strokes
+    s += '<g class="brows">';
     br.forEach((d, i) => {
       s += `<path d="${d}" stroke="${hair}" stroke-width="${o.female ? 2.4 : 3.6}" fill="none" stroke-linecap="round"/>`;
       s += `<path d="${d}" stroke="${tint(hair, .2)}" stroke-width=".8" fill="none" opacity=".35" transform="translate(0 -.8)"/>`;
     });
+    s += '</g>';
     // nose
     s += `<path d="M102.6 92 Q105 100 105.2 104 Q103.4 103.2 101.6 96Z" fill="${dk}" opacity=".45"/>`;
     s += `<path d="M98.8 91 Q97.4 100.5 95.4 104.8 Q96.6 108.4 100 108.6 Q103.4 108.4 104.8 105.4" stroke="${dk2}" stroke-width="1.25" fill="none" stroke-linecap="round" opacity=".75"/>`;
@@ -357,16 +359,85 @@ const CHAR = (() => {
   }
 
   // small idle life: eyes glance around now and then
+  // ---- living characters ----
+  // One shared loop moves every visible character like a person: weight shifts on springs, breathing
+  // that lifts the shoulders, the head following the eyes, arms that lag behind the body, random blinks,
+  // glances, nods and shrugs, and a livelier head and brows while talking.
+  const LIVE = new Set(); let liveRaf = 0, liveLast = 0, liveAcc = 0;
+  const rr = (a, b) => a + Math.random() * (b - a);
+  function spring(o, target, k, damp, dt) { o.v += ((target - o.x) * k - o.v * damp) * dt; o.x += o.v * dt; }
+  function newState() {
+    return { t: Math.random() * 10, sway: { x: 0, v: 0 }, swayT: 0, swayNext: rr(1, 3), arm: { x: 0, v: 0 }, head: { x: 0, v: 0 }, look: 0, lookY: 0, lookNext: rr(.5, 2),
+      breathF: rr(.2, .27), blink: rr(1, 4), lid: 0, nod: 0, shrug: 0, idleNext: rr(6, 12), brow: { x: 0, v: 0 }, browNext: 1, tilt: { x: 0, v: 0 } };
+  }
+  function parts(el) {
+    const svg = el.querySelector('svg');
+    if (el._svg !== svg) {
+      el._svg = svg;
+      const q = c => el.querySelector(c), qa = c => [...el.querySelectorAll(c)];
+      el._p = { sway: q('.sway'), body: q('.body'), head: q('.headg'), iris: qa('.iris'), lids: qa('.lid'), brows: q('.brows'), armL: q('.arm-rest-l'), armR: q('.arm-rest-r') };
+      if (el._p.armL) { el._p.armL.style.transformOrigin = '139px 160px'; el._p.armL.style.transformBox = 'view-box'; }
+      if (el._p.armR) { el._p.armR.style.transformOrigin = '61px 160px'; el._p.armR.style.transformBox = 'view-box'; }
+      if (el._p.brows) { el._p.brows.style.transformOrigin = '100px 90px'; el._p.brows.style.transformBox = 'view-box'; }
+    }
+    return el._p;
+  }
+  function animate(el, dt) {
+    const s = el._st, P = parts(el); if (!P.sway) return;
+    s.t += dt;
+    const talking = el.classList.contains('talking');
+    // weight shift: pick a new stance every few seconds and settle into it on a spring
+    if ((s.swayNext -= dt) <= 0) { s.swayT = rr(-1, 1) * (Math.random() < .3 ? .3 : 1); s.swayNext = rr(2.5, 6.5); }
+    spring(s.sway, s.swayT, 6, 4.2, dt);
+    spring(s.arm, s.sway.x + s.sway.v * .25, 9, 3.2, dt);
+    // where the eyes look; the head follows a moment later
+    if ((s.lookNext -= dt) <= 0) { const big = Math.random() < .2; s.look = Math.random() < .4 ? 0 : rr(-1, 1) * (big ? 1.5 : .8); s.lookY = rr(-.5, .4); s.lookNext = big ? rr(.8, 1.6) : rr(1.2, 3.6); if (big && Math.random() < .5) s.lookNext += 0; }
+    const talkRot = talking ? Math.sin(s.t * 5.1) * 1.3 + Math.sin(s.t * 2.3 + 1) * .9 : 0;
+    spring(s.head, s.look * 3.2 - s.sway.x * .7 + talkRot, talking ? 14 : 5, 4.5, dt);
+    spring(s.tilt, (talking ? Math.sin(s.t * 1.7) * .8 : 0) + s.lookY * 1.2, 4, 3, dt);
+    // occasional idle moments: a nod, a shrug, or a long glance away
+    if ((s.idleNext -= dt) <= 0) { const r = Math.random(); if (r < .4) s.nod = 1; else if (r < .65) s.shrug = 1; else { s.look = rr(-1, 1) > 0 ? 1.6 : -1.6; s.lookNext = rr(1, 1.8); } s.idleNext = rr(7, 15); }
+    if (talking && Math.random() < dt * .7) s.nod = Math.max(s.nod, .6);
+    s.nod = Math.max(0, s.nod - dt * 1.6); s.shrug = Math.max(0, s.shrug - dt * 1.4);
+    const nodY = Math.sin((1 - s.nod) * Math.PI * 2) * s.nod * 2.2, shrugY = Math.sin((1 - s.shrug) * Math.PI) * s.shrug * 3;
+    // brows lift with emphasis while talking, and a little on big glances
+    if ((s.browNext -= dt) <= 0) { s.browNext = talking ? rr(.6, 1.8) : rr(3, 7); s.brow.v -= talking ? rr(6, 14) : rr(0, 5); }
+    spring(s.brow, 0, 18, 6, dt);
+    // breathing
+    const b = Math.sin(s.t * s.breathF * Math.PI * 2), deep = 1 + Math.max(0, Math.sin(s.t * .09)) * .6;
+    // blinking, sometimes twice
+    if ((s.blink -= dt) <= 0) { s.lid = .13; s.blink = Math.random() < .15 ? .22 : rr(2, 5.5); }
+    s.lid = Math.max(0, s.lid - dt);
+    const sw = s.sway.x;
+    P.sway.style.transform = `translateX(${sw * 2.2}px) rotate(${sw * 1.1}deg)`;
+    P.body.style.transform = `translateY(${-b * .7 * deep}px) scale(1, ${1 + b * .007 * deep})`;
+    const hy = nodY - shrugY * .5 - b * .4;
+    if (P.head) P.head.style.transform = `translate(${s.tilt.x * .4}px, ${hy}px) rotate(${s.head.x}deg)`;
+    const armSwing = (s.arm.x - sw) * 3.2, shoulder = -b * .6 * deep - shrugY;
+    if (P.armL) P.armL.style.transform = `translateY(${shoulder}px) rotate(${-1 - armSwing + sw * .4}deg)`;
+    if (P.armR) P.armR.style.transform = `translateY(${shoulder}px) rotate(${1 - armSwing + sw * .4}deg)`;
+    const ix = s.look * 1.9, iy = s.lookY * 1.1;
+    P.iris.forEach(g => { g.style.transform = `translate(${ix}px, ${iy}px)`; });
+    P.lids.forEach(l => { l.style.transform = `scaleY(${s.lid > 0 ? 1 : 0})`; });
+    if (P.brows) P.brows.style.transform = `translateY(${s.brow.x * .12}px)`;
+  }
+  function liveTick(now) {
+    liveRaf = 0;
+    const raw = Math.min(.1, (now - (liveLast || now)) / 1000); liveLast = now; liveAcc += raw;
+    // 30 fps is plenty for this, and 20 in battery saver
+    if (liveAcc >= (window.PERF && PERF.low ? 1 / 20 : 1 / 30)) {
+      const dt = Math.min(.1, liveAcc); liveAcc = 0;
+      LIVE.forEach(el => {
+        if (!el.isConnected) { LIVE.delete(el); el._alive = false; return; }
+        if (el.offsetParent === null || (window.PERF && PERF.covered(el))) return;
+        try { animate(el, dt); } catch (e) {}
+      });
+    }
+    if (LIVE.size) liveRaf = requestAnimationFrame(liveTick);
+  }
   function life(el) {
-    if (el._life) return;
-    const tick = () => {
-      if (!el.isConnected) { el._life = null; return; }
-      const r = Math.random();
-      const dx = r < .45 ? 0 : (Math.random() - .5) * 3.4, dy = r < .45 ? 0 : (Math.random() - .5) * 1.4;
-      el.querySelectorAll('.iris').forEach(g => { g.style.transform = `translate(${dx}px, ${dy}px)`; });
-      el._life = setTimeout(tick, 900 + Math.random() * 2600);
-    };
-    el._life = setTimeout(tick, 800);
+    if (!el._alive) { el._alive = true; el._st = newState(); el.classList.add('alive'); LIVE.add(el); }
+    if (!liveRaf) liveRaf = requestAnimationFrame(liveTick);
   }
   function render(el, o) { el.innerHTML = build(o); el.dataset.mood = o.mood || 'neutral'; life(el); }
   function setMood(el, o, mood) {
@@ -389,3 +460,6 @@ const CHAR = (() => {
   }
   return { build, render, setMood, insigniaBadge, SKINS, HAIRS, rankItems, mix, image };
 })();
+
+// make the module reachable as window.X too (top-level const is not a window property)
+ window.CHAR = CHAR;

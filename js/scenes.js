@@ -1145,3 +1145,6 @@ const SCENES = (() => {
   };
   return { S, Runner, LABELS, LIGHT, bloom, BLOOM, foreground, helpers: { sky, ridge, sun, moon, stars, flag, tree, house, snow, rain, dust, vignette, floor, skyline, lightning, lamp, grad, srand, starShape, mountains, hills, clouds, godRays, mistBand, drawTree, smoke, fire, flare, walker, waterSurface, fireflies, birds, cached, mix, rgba } };
 })();
+
+// make the module reachable as window.X too (top-level const is not a window property)
+ window.PERF = PERF; window.SCENES = SCENES;

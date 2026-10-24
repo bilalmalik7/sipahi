@@ -218,3 +218,6 @@ const FIG = (() => {
   }
   return { P, lerp, ease, draw, Fx, heli, plane, car, muzzle, style };
 })();
+
+// make the module reachable as window.X too (top-level const is not a window property)
+ window.FIG = FIG;
