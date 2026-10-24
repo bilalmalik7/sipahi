@@ -408,11 +408,11 @@ const CHAR = (() => {
     // blinking, sometimes twice
     if ((s.blink -= dt) <= 0) { s.lid = .13; s.blink = Math.random() < .15 ? .22 : rr(2, 5.5); }
     s.lid = Math.max(0, s.lid - dt);
-    const sw = s.sway.x;
+    const calm = window.META && META.settings.calm ? .35 : 1, sw = s.sway.x * calm;
     P.sway.style.transform = `translateX(${sw * 2.2}px) rotate(${sw * 1.1}deg)`;
     P.body.style.transform = `translateY(${-b * .7 * deep}px) scale(1, ${1 + b * .007 * deep})`;
     const hy = nodY - shrugY * .5 - b * .4;
-    if (P.head) P.head.style.transform = `translate(${s.tilt.x * .4}px, ${hy}px) rotate(${s.head.x}deg)`;
+    if (P.head) P.head.style.transform = `translate(${s.tilt.x * .4 * calm}px, ${hy * calm}px) rotate(${s.head.x * calm}deg)`;
     const armSwing = (s.arm.x - sw) * 3.2, shoulder = -b * .6 * deep - shrugY;
     if (P.armL) P.armL.style.transform = `translateY(${shoulder}px) rotate(${-1 - armSwing + sw * .4}deg)`;
     if (P.armR) P.armR.style.transform = `translateY(${shoulder}px) rotate(${1 - armSwing + sw * .4}deg)`;
@@ -448,17 +448,21 @@ const CHAR = (() => {
   }
   // the character as an <img> for canvas cutscenes; variants for blinking, talking and saluting
   const imgCache = new Map();
+  // portrait bitmaps are big (width x height x 4 bytes once decoded), so their size and how many are
+  // kept depend on the device: 4x and 60 on desktops, 3x and 30 on phones, 2x and 18 on low-memory phones
+  const memLow = (navigator.deviceMemory || 8) <= 3, phone = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+  const IMG_K = memLow ? 2 : phone ? 3 : 4, IMG_MAX = memLow ? 18 : phone ? 30 : 60;
   function image(o, v = {}) {
     const key = JSON.stringify(o) + JSON.stringify(v);
     let im = imgCache.get(key);
     if (im) return im;
     const css = `.lid{transform:scaleY(${v.blink ? 1 : 0})}.mouth-talk{opacity:${v.talk ? 1 : 0}}.mouth-rest{opacity:${v.talk ? 0 : 1}}.arm-gesture{display:none}.arm-cross{display:none}.arm-hips{display:none}${v.salute ? '.arm-rest-r{display:none}' : '.arm-salute{display:none}'}`;
-    const svg = build(o).replace('<svg viewBox="0 0 200 460"', '<svg width="800" height="1840" viewBox="0 0 200 460"').replace('<defs>', `<style>${css}</style><defs>`);
+    const svg = build(o).replace('<svg viewBox="0 0 200 460"', `<svg width="${200 * IMG_K}" height="${460 * IMG_K}" viewBox="0 0 200 460"`).replace('<defs>', `<style>${css}</style><defs>`);
     im = new Image(); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-    imgCache.set(key, im); if (imgCache.size > 80) imgCache.delete(imgCache.keys().next().value);
+    im.decoding = 'async'; imgCache.set(key, im); if (imgCache.size > IMG_MAX) imgCache.delete(imgCache.keys().next().value);
     return im;
   }
-  return { build, render, setMood, insigniaBadge, SKINS, HAIRS, rankItems, mix, image };
+  return { build, render, setMood, insigniaBadge, SKINS, HAIRS, rankItems, mix, image, IMG_K };
 })();
 
 // make the module reachable as window.X too (top-level const is not a window property)

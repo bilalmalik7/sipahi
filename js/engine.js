@@ -87,12 +87,22 @@
 
   // ---------------- UI: life screen ----------------
   function fmtMoney(k) { const r = k * 1000; if (Math.abs(r) >= 1e7) return 'Rs ' + (r / 1e7).toFixed(1) + ' crore'; if (Math.abs(r) >= 1e5) return 'Rs ' + (r / 1e5).toFixed(1) + ' lakh'; return 'Rs ' + Math.round(r).toLocaleString(); }
+  // money rolls to its new value, green when it rises and red when it falls
+  let shownMoney = null, moneyRaf = 0;
+  function rollMoney(to) {
+    const el = $('hudMoney');
+    if (shownMoney === null || Math.abs(to - shownMoney) < 1) { shownMoney = to; el.textContent = fmtMoney(to); return; }
+    const from = shownMoney, t0 = performance.now(); el.classList.remove('rise', 'fall'); void el.offsetWidth; el.classList.add(to > from ? 'rise' : 'fall');
+    cancelAnimationFrame(moneyRaf);
+    const step = now => { const k = Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - k, 3); shownMoney = from + (to - from) * e; el.textContent = fmtMoney(Math.round(shownMoney)); if (k < 1) moneyRaf = requestAnimationFrame(step); else shownMoney = to; };
+    moneyRaf = requestAnimationFrame(step);
+  }
   function renderHUD() {
     $('hudName').textContent = S.name;
     $('hudRank').textContent = RANKS[S.rank].n;
     $('hudPlace').textContent = S.flags.ssg ? 'SSG · ' + S.town : (S.rank >= 2 ? S.regiment : S.town);
     $('hudAge').textContent = S.age;
-    $('hudMoney').textContent = fmtMoney(S.money);
+    rollMoney(S.money);
     $('insigniaBig').innerHTML = CHAR.insigniaBadge(S.rank) + `<span>${RANKS[S.rank].s}</span>`;
   }
   let lastStats = {};
@@ -100,7 +110,7 @@
     $('stats').innerHTML = STATS.map(([k, label, c]) => {
       const v = clamp(Math.round(S[k]), 0, 100), chg = lastStats[k] !== undefined && lastStats[k] !== v ? (v > lastStats[k] ? ' up' : ' down') : ''; lastStats[k] = v;
       const col = k === 'health' || k === 'happy' ? (v < 30 ? '#d04a33' : v < 55 ? '#e8c53a' : c) : c;
-      return `<div class="stat${chg}"><span>${label}</span><div class="bar"><i style="width:${v}%;background:${col}"></i></div><b>${v}</b></div>`;
+      return `<div class="stat${chg}" data-k="${k}"><span>${label}</span><div class="bar"><i style="width:${v}%;background:${col}"></i></div><b>${v}</b></div>`;
     }).join('');
   }
   function renderLog() {
@@ -665,12 +675,18 @@
       const st = META.settings;
       sheet('Settings', `<div class="setrow"><b>Text speed</b><div class="seg">${['slow', 'normal', 'fast', 'instant'].map(v => `<button class="${st.speed === v ? 'on' : ''}" data-speed="${v}">${v}</button>`).join('')}</div></div>
         <div class="setrow"><b>Auto-advance dialogue</b><div class="seg"><button class="${st.auto ? '' : 'on'}" data-auto="0">Off</button><button class="${st.auto ? 'on' : ''}" data-auto="1">On</button></div></div>
+        <div class="setrow"><b>Text size</b><div class="seg">${[['s', 'Small'], ['m', 'Normal'], ['l', 'Large']].map(([v, l]) => `<button class="${(st.text || 'm') === v ? 'on' : ''}" data-txt="${v}">${l}</button>`).join('')}</div></div>
+        <div class="setrow"><b>Vibration</b><div class="seg"><button class="${st.vibrate !== false ? 'on' : ''}" data-vib="1">On</button><button class="${st.vibrate === false ? 'on' : ''}" data-vib="0">Off</button></div></div>
+        <div class="setrow"><b>Reduce motion</b><div class="seg"><button class="${st.calm ? '' : 'on'}" data-calm="0">Off</button><button class="${st.calm ? 'on' : ''}" data-calm="1">On</button></div></div>
         <div class="setrow"><b>Graphics</b><div class="seg">${[['auto', 'Auto'], ['high', 'High'], ['saver', 'Battery saver']].map(([v, l]) => `<button class="${PERF.mode === v ? 'on' : ''}" data-gfx="${v}">${l}</button>`).join('')}</div></div>
         <div class="setrow"><b>Music</b><div class="seg"><button class="${MUSIC.on ? 'on' : ''}" data-mus="1">On</button><button class="${MUSIC.on ? '' : 'on'}" data-mus="0">Off</button></div></div>
         <div class="setrow"><b>Music volume</b><div class="seg">${[['.3', 'Low'], ['.6', 'Medium'], ['1', 'High']].map(([v, l]) => `<button class="${Math.abs(MUSIC.vol - v) < .05 ? 'on' : ''}" data-mvol="${v}">${l}</button>`).join('')}</div></div>
         <div class="setrow"><b>Sound effects</b><div class="seg"><button class="${SFX.on ? 'on' : ''}" data-snd="1">On</button><button class="${SFX.on ? '' : 'on'}" data-snd="0">Off</button></div></div>
         <p class="sheet-note">Lives started: ${M.lives}. Merit Stars earned in total: ${M.totalStars}. Daily ration streak: ${M.daily.streak} day${M.daily.streak === 1 ? '' : 's'}.</p>`);
       $('sheetBody').querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { META.setSetting('speed', b.dataset.speed); openMeta('settings'); });
+      $('sheetBody').querySelectorAll('[data-txt]').forEach(b => b.onclick = () => { META.setSetting('text', b.dataset.txt); POLISH.applySettings(); openMeta('settings'); });
+      $('sheetBody').querySelectorAll('[data-vib]').forEach(b => b.onclick = () => { META.setSetting('vibrate', b.dataset.vib === '1'); if (b.dataset.vib === '1') SFX.good(); openMeta('settings'); });
+      $('sheetBody').querySelectorAll('[data-calm]').forEach(b => b.onclick = () => { META.setSetting('calm', b.dataset.calm === '1'); POLISH.applySettings(); openMeta('settings'); });
       $('sheetBody').querySelectorAll('[data-mus]').forEach(b => b.onclick = () => { SFX.unlock(); if ((b.dataset.mus === '1') !== MUSIC.on) MUSIC.toggle(); openMeta('settings'); });
       $('sheetBody').querySelectorAll('[data-mvol]').forEach(b => b.onclick = () => { MUSIC.setVol(+b.dataset.mvol); openMeta('settings'); });
       $('sheetBody').querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { PERF.set(b.dataset.gfx); openMeta('settings'); });
@@ -687,9 +703,11 @@
     const r = META.claimDaily();
     await new Promise(res => {
       $('modalKicker').textContent = 'Daily ration'; $('modalTitle').textContent = `+${r} Merit Stars`;
-      $('modalText').textContent = `Day ${META.M.daily.streak} of your streak. Come back tomorrow for a bigger ration (up to 30 stars a day). Spend stars on Perks that carry into every life.`;
+      $('modalText').textContent = `Day ${META.M.daily.streak} of your streak. Come back every day: day 7 brings a Gold Crate for your squad.`;
+      $('modalText').insertAdjacentHTML('afterend', POLISH.calendar(META.M.daily.streak));
+      if (META.M.daily.streak % 7 === 0 && window.OPS) { OPS.O.crates.gold++; try { localStorage.setItem('sss_ops_v1', JSON.stringify(OPS.O)); } catch (e) {} }
       cardArt('barracks', 'sherkhan', 'happy');
-      const B = $('modalBtns'); B.innerHTML = ''; const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Collect'; b.onclick = () => { $('modal').hidden = true; SFX.fanfare(); confetti(60); renderStars(); res(); }; B.appendChild(b);
+      const B = $('modalBtns'); B.innerHTML = ''; const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Collect'; b.onclick = () => { $('modal').hidden = true; const cal = document.querySelector('#modal .cal'); if (cal) cal.remove(); SFX.fanfare(); confetti(60); renderStars(); res(); }; B.appendChild(b);
       $('modal').hidden = false;
     });
   }
@@ -974,7 +992,7 @@
     lifeBG = SCENES.Runner($('lifeCanvas'), $('lifeFg')); storyBG = SCENES.Runner($('storyCanvas'), $('storyFg'));
     bindAdvance();
     const saved = load();
-    if (saved && !saved.ended) { $('btnContinue').hidden = false; }
+    if (saved && !saved.ended) { $('btnContinue').hidden = false; $('btnContinue').innerHTML = `Continue <small>${RANKS[saved.rank].s} ${saved.name.split(' ')[0]}, ${saved.age}</small>`; }
     $('btnSound').textContent = 'Sound: ' + (SFX.on ? 'On' : 'Off');
     $('btnSound').onclick = () => { const on = SFX.toggle(); $('btnSound').textContent = 'Sound: ' + (on ? 'On' : 'Off'); };
     $('btnNew').onclick = () => { SFX.unlock(); SFX.click(); show('create'); initCreate(); };
@@ -1010,7 +1028,7 @@
   function goTitle() {
     if (S && !S.ended) save();
     $('story').hidden = true; lifeBG && lifeBG.stop(); show('title'); titleBG && titleBG.start();
-    const sv = load(); $('btnContinue').hidden = !(sv && !sv.ended);
+    const sv = load(); $('btnContinue').hidden = !(sv && !sv.ended); if (sv && !sv.ended) $('btnContinue').innerHTML = `Continue <small>${RANKS[sv.rank].s} ${sv.name.split(' ')[0]}, ${sv.age}</small>`;
   }
   window.androidBack = () => {
     const vis = id => $(id) && !$(id).hidden;
@@ -1036,6 +1054,6 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && S) save(); });
   window.addEventListener('pagehide', () => { if (S) save(); });
   setInterval(() => { if (S && !S.ended && !$('life').hidden) save(); }, 20000);
-  window.GAME = { bg: { pause() { titleBG && titleBG.stop(); lifeBG && lifeBG.stop(); }, resume() { if (!$('title').hidden) titleBG && titleBG.start(); else if (!$('life').hidden) lifeBG && lifeBG.start(); } }, renderStars: () => renderStars(), get S() { return S; }, RANKS, EVENTS, ageUp, runEvent, ending, applyFx, look: (mood, extra) => Object.assign(playerLook(mood), extra || {}), rankName: () => S ? RANKS[S.rank].n : '', interp: t => interp(t) };
+  window.GAME = { toast: t => toast(t), STAT_HELP: null, bg: { pause() { titleBG && titleBG.stop(); lifeBG && lifeBG.stop(); }, resume() { if (!$('title').hidden) titleBG && titleBG.start(); else if (!$('life').hidden) lifeBG && lifeBG.start(); } }, renderStars: () => renderStars(), get S() { return S; }, RANKS, EVENTS, ageUp, runEvent, ending, applyFx, look: (mood, extra) => Object.assign(playerLook(mood), extra || {}), rankName: () => S ? RANKS[S.rank].n : '', interp: t => interp(t) };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

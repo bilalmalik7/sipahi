@@ -747,3 +747,52 @@ canvas { display: block; }
 .campaign b { font-family: var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--brass); font-size: 13px; }
 .campaign .bar i { background: linear-gradient(90deg, var(--brass), #f6d27a); }
 .campaign span { font-size: 12.5px; color: var(--khaki); }
+
+/* ---------- touch: no text selection, long-press menus, double-tap zoom or pull-to-refresh ---------- */
+html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, select, textarea { -webkit-user-select: text; user-select: text; }
+img, svg, canvas { -webkit-user-drag: none; }
+
+/* ---------- splash ---------- */
+.splash { position: absolute; inset: 0; z-index: 120; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #1c2a1c, #050806 70%); transition: opacity .45s, transform .45s; cursor: pointer; }
+.splash.out { opacity: 0; transform: scale(1.06); }
+.sp-in { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px; text-align: center; }
+.crest { width: min(150px, 38vw); aspect-ratio: 1; animation: crestIn 1s cubic-bezier(.2,1.4,.4,1) both, crestGlow 2.6s ease-in-out 1s infinite; filter: drop-shadow(0 0 22px rgba(224,168,62,.45)); }
+.crest svg { width: 100%; height: 100%; }
+@keyframes crestIn { from { transform: scale(.3) rotate(-90deg); opacity: 0; } }
+@keyframes crestGlow { 50% { filter: drop-shadow(0 0 34px rgba(224,168,62,.75)); } }
+.splash h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 8vw, 54px); line-height: .95; animation: logoIn 1s .2s both; }
+.splash h1 span { display: block; font-size: .4em; color: var(--brass); letter-spacing: .3em; }
+.sp-bar { width: min(220px, 60vw); height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+.sp-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--pak-hi), var(--brass)); animation: spLoad 1.05s ease-out both; }
+@keyframes spLoad { from { width: 0; } to { width: 100%; } }
+.sp-tip { max-width: 34ch; margin: 0; color: var(--khaki); font-size: 14px; min-height: 2.8em; }
+.sp-tip::before { content: 'TIP · '; color: var(--brass); font-family: var(--label); letter-spacing: .12em; }
+.sp-go { animation: deployGlow 1.4s ease-in-out infinite, rwIn .5s both; font-size: 18px; padding: 13px 28px; }
+/* ---------- 7-day calendar ---------- */
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 0 0 14px; }
+.cal-d { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; background: rgba(0,0,0,.35); border: 1px solid var(--olive); border-radius: 6px; padding: 5px 1px; }
+.cal-d small { font-family: var(--label); font-size: 10px; color: var(--muted); }
+.cal-d b { font-family: var(--label); font-size: 12px; color: var(--brass); white-space: nowrap; }
+.cal-d.got { opacity: .55; } .cal-d em { position: absolute; top: -6px; right: -3px; font-style: normal; color: #9be87a; font-size: 13px; }
+.cal-d.today { border-color: var(--brass); background: rgba(90,62,10,.5); animation: badgePop 1.2s ease-in-out infinite; }
+.cal-d.big b { color: #f6d27a; }
+/* ---------- guided tour ---------- */
+.tour { position: absolute; inset: 0; z-index: 110; }
+.tour-ring { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,.66), 0 0 0 3px var(--brass), 0 0 24px 6px rgba(224,168,62,.6); transition: all .35s cubic-bezier(.3,.8,.3,1); pointer-events: none; }
+.tour-tip { position: absolute; left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 32px)); background: var(--night-2); border: 1px solid var(--brass); border-radius: 10px; padding: 12px 14px; }
+.tour-tip.pop { animation: pop .3s cubic-bezier(.2,1.4,.4,1); }
+.tour-tip p { margin: 0 0 10px; font-size: 15px; }
+.tour-tip .row { display: flex; justify-content: flex-end; gap: 8px; }
+/* ---------- stat explanations ---------- */
+.stat { position: relative; cursor: pointer; }
+.stat-pop { position: absolute; z-index: 8; left: 0; right: 0; bottom: calc(100% + 6px); background: rgba(10,14,11,.97); border: 1px solid var(--brass); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.35; animation: pop .25s both; pointer-events: none; }
+.stat-pop b { display: block; font-family: var(--label); color: var(--brass); letter-spacing: .06em; }
+/* ---------- money roll, continue summary, transitions, text size ---------- */
+.hud-money.rise { color: #9be87a; transition: color 1.2s; } .hud-money.fall { color: #f2a08e; transition: color 1.2s; }
+#btnContinue small { display: block; font-family: var(--body); font-size: 11px; letter-spacing: .02em; text-transform: none; color: var(--khaki); }
+#title:not([hidden]), #life:not([hidden]), #create:not([hidden]), #ops:not([hidden]) { animation: scrIn .35s ease-out both; }
+@keyframes scrIn { from { opacity: 0; transform: scale(1.015); } }
+.txt-s body { font-size: 13.5px; } .txt-s .line { font-size: 15px; } .txt-s .choice { font-size: 13.5px; }
+.txt-l body { font-size: 17px; } .txt-l .line { font-size: 20px; } .txt-l .choice { font-size: 17px; } .txt-l .act-btn b, .txt-l .row-item .meta b { font-size: 18px; } .txt-l .eff { font-size: 13px; }
+.calm *, .calm *::before, .calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

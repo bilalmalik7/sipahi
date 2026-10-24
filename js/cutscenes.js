@@ -690,7 +690,7 @@ const CUT = (() => {
     const img = im.complete && im.naturalWidth ? im : base;
     if (!img.complete || !img.naturalWidth) return;
     const crop = { face: [52, 34, 96, 118], bust: [22, 26, 156, 230], waist: [0, 20, 200, 300], full: [0, 0, 200, 460] }[o.crop || 'bust'];
-    const k = 4, sx = crop[0] * k, sy = crop[1] * k, sw = crop[2] * k, sh = crop[3] * k;
+    const k = CHAR.IMG_K, sx = crop[0] * k, sy = crop[1] * k, sw = crop[2] * k, sh = crop[3] * k;
     const breathe = 1 + Math.sin(t * 1.7) * .006;
     const dh = h * (o.hgt || .9) * breathe, dw = dh * sw / sh;
     const cx = w * (o.x ?? .5), by = h * (o.bottom ?? 1.0);

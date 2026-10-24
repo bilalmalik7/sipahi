@@ -34,7 +34,7 @@ const SFX = (() => {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.1);
   }
-  const buzz = p => { try { if (on && navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
+  const buzz = p => { try { if (on && navigator.vibrate && !(window.META && META.settings.vibrate === false)) navigator.vibrate(p); } catch (e) {} };
   const api = {
     get on() { return on; },
     toggle() { on = !on; try { localStorage.setItem('sss_sound', on ? 'on' : 'off'); } catch (e) {} if (!on) api.stopPad(); return on; },

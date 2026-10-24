@@ -4,11 +4,23 @@ A BitLife-style life simulator with a story: you start as a 16-year-old schoolbo
 
 ## Download for Android
 
-**[⬇ Download SipahiSeSipahsalar.apk](https://github.com/bilalmalik7/sipahi/raw/main/release/SipahiSeSipahsalar.apk)** (version 1.3, about 1.2 MB, Android 5.0 and newer, plays fully offline). Install steps are in the [Android APK](#android-apk) section below.
+**[⬇ Download SipahiSeSipahsalar.apk](https://github.com/bilalmalik7/sipahi/raw/main/release/SipahiSeSipahsalar.apk)** (version 1.4, about 1.2 MB, Android 5.0 and newer, plays fully offline). Install steps are in the [Android APK](#android-apk) section below.
 
 ## Play in a browser
 
 Open `index.html` in a browser. No build step and no server needed. Progress saves automatically in the browser (`localStorage`).
+
+## Version 1.4
+
+- **Splash screen** with the crest, a short loading bar and a gameplay tip each launch. Tapping it also starts the music.
+- **7-day login calendar** for the daily ration; day 7 of every week adds a Gold Crate for your squad.
+- **Squad pay while you're away**: open Operations after an hour or more away and your squad has earned supplies (up to 8 hours' worth).
+- **First-time guided tour** of the life screen: Age, Activities, Career, Operations, stats and the home button.
+- **Tap any stat** for what it does and how to raise it.
+- **Continue shows your officer** (rank, name and age) on the title screen.
+- **Money rolls** to its new value, green when it rises and red when it falls; screens fade in.
+- **Settings**: text size (Small, Normal, Large), vibration on/off, and reduce motion (calms character movement, screen shake and animations).
+- **Lighter on phones**: cutscene portraits use smaller images and fewer are kept in memory on phones (up to about 100 MB on a typical phone instead of about 470 MB, less on low-memory phones), the Android app asks for a larger memory allowance, and long-press menus, text selection, double-tap zoom and pull-to-refresh are switched off.
 
 ## Version 1.3
 
@@ -125,7 +137,7 @@ ME(determined): Look at me, not at them.        (you speak, with a mood)
 
 ## Android APK
 
-A ready-to-install APK is in `release/SipahiSeSipahsalar.apk` (version 1.3, about 1.2 MB, Android 5.0 and newer, plays fully offline, fonts included).
+A ready-to-install APK is in `release/SipahiSeSipahsalar.apk` (version 1.4, about 1.2 MB, Android 5.0 and newer, plays fully offline, fonts included).
 
 Install on a phone: download the file, open it, allow "Install unknown apps" for your browser or file manager when asked, then tap Install. The app runs full screen in landscape or portrait, keeps the screen on, vibrates on hits and explosions, and the Back button closes open panels (press twice quickly to exit).
 

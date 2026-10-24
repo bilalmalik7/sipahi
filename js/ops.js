@@ -397,7 +397,7 @@ const OPS = (() => {
   function bannerFx(title, sub) {
     return new Promise(res => {
       const d = document.createElement('div'); d.className = 'ops-banner';
-      d.innerHTML = `<div class="rays"></div><div class="bn-in"><small>Theatre complete</small><h2>${title}</h2><p>${sub}</p><button class="btn primary">Continue</button></div>`;
+      d.innerHTML = `<div class="rays"></div><div class="bn-in"><small>${/⛁/.test(title) ? 'Squad pay' : 'Theatre complete'}</small><h2>${title}</h2><p>${sub}</p><button class="btn primary">Continue</button></div>`;
       $('app').appendChild(d); SFX.fanfare(); confetti();
       d.querySelector('button').onclick = () => { SFX.click(); d.remove(); res(); };
     });
@@ -580,9 +580,16 @@ const OPS = (() => {
     if (ti < 0) ti = THEATRES.length - 1;
     $('ops').hidden = false; runner.start(); renderMap();
     lastCrates = { field: O.crates.field, gold: O.crates.gold };
+    // squad pay while you were away: up to 8 hours, more with a bigger squad and a higher level
+    const now = Date.now(), away = O.lastVisit ? (now - O.lastVisit) / 36e5 : 0; O.lastVisit = now; save();
+    if (away >= 1 && O.lvl >= 2) {
+      const hrs = Math.min(8, away), squad = Object.keys(O.cards).length, pay = Math.round(hrs * (8 + O.lvl * 2) * (1 + squad * .05));
+      O.sup += pay; save(); renderHud();
+      setTimeout(() => bannerFx(`+${pay} ⛁`, `While you were away (${hrs >= 8 ? '8+' : Math.floor(hrs)} hours), your squad of ${squad || 'recruits'} ran patrols and drew pay. Up to 8 hours are paid, so come back often.`), 500);
+    }
     if (!O.tut) { O.tut = 1; save(); setTimeout(() => { if (!$('ops').hidden) toast('Tap the glowing mission to start. Win to unlock the next!'); }, 600); }
   }
-  function close() { SFX.click(); closeBrief(); $('ops').hidden = true; runner.stop(); if (window.GAME && GAME.bg) GAME.bg.resume(); document.dispatchEvent(new Event('ops-closed')); }
+  function close() { SFX.click(); O.lastVisit = Date.now(); save(); closeBrief(); $('ops').hidden = true; runner.stop(); if (window.GAME && GAME.bg) GAME.bg.resume(); document.dispatchEvent(new Event('ops-closed')); }
   function quick() { open(); const nx = nextMission(); if (nx) brief(nx[0], nx[1]); }
 
   function init() {

@@ -160,7 +160,7 @@ const FIG = (() => {
     return {
       shake: 0,
       boom(x, y, s = 1) {
-        this.shake = Math.min(1.4, this.shake + .9 * s);
+        this.shake = Math.min(1.4, this.shake + .9 * s * (window.META && META.settings.calm ? .25 : 1));
         for (let i = 0; i < 46 * s; i++) { const a = Math.random() * Math.PI * 2, v = (60 + Math.random() * 260) * s; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 80 * s, life: .5 + Math.random() * .8, max: 1.3, r: (4 + Math.random() * 14) * s, k: 'fire' }); }
         for (let i = 0; i < 24 * s; i++) parts.push({ x, y, vx: (Math.random() - .5) * 80, vy: -20 - Math.random() * 60, life: 2 + Math.random() * 2, max: 4, r: (14 + Math.random() * 24) * s, k: 'smoke' });
         parts.push({ x, y, life: .25, max: .25, r: 140 * s, k: 'flash' });
